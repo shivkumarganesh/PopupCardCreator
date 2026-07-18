@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { useCardStore } from '../../state/store';
+import { conflictingIds } from '../../core/validate';
 import { BaseCard } from './BaseCard';
 import { ParallelFold } from './ParallelFold';
 
@@ -11,6 +13,7 @@ export function Scene() {
   const openAngleDeg = useCardStore((s) => s.openAngleDeg);
   const card = useCardStore((s) => s.card);
   const mechanisms = useCardStore((s) => s.mechanisms);
+  const conflicts = useMemo(() => conflictingIds(mechanisms), [mechanisms]);
 
   return (
     <Canvas camera={{ position: [12, 11, 18], fov: 40 }} shadows>
@@ -32,6 +35,7 @@ export function Scene() {
             card={card}
             openAngleDeg={openAngleDeg}
             worldPerMm={WORLD_PER_MM}
+            conflict={conflicts.has(m.id)}
           />
         ) : null,
       )}

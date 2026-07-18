@@ -1,4 +1,6 @@
+import { useMemo } from 'react';
 import { useCardStore } from '../state/store';
+import { conflictingIds } from '../core/validate';
 import type { ParallelFoldMechanism } from '../core/types';
 
 function Slider({
@@ -31,19 +33,28 @@ function Slider({
   );
 }
 
-function ParallelFoldEditor({ m, index }: { m: ParallelFoldMechanism; index: number }) {
+function ParallelFoldEditor({
+  m,
+  index,
+  conflict,
+}: {
+  m: ParallelFoldMechanism;
+  index: number;
+  conflict: boolean;
+}) {
   const card = useCardStore((s) => s.card);
   const update = useCardStore((s) => s.updateMechanism);
   const remove = useCardStore((s) => s.removeMechanism);
 
   return (
-    <div className="mech-item">
+    <div className={`mech-item${conflict ? ' mech-item-conflict' : ''}`}>
       <div className="mech-item-head">
         <span>Step fold {index + 1}</span>
         <button onClick={() => remove(m.id)} title="Remove">
           ✕
         </button>
       </div>
+      {conflict && <p className="mech-conflict-note">⚠ Overlaps another step fold</p>}
       <Slider
         label="Position"
         value={m.centreMm}
@@ -73,6 +84,8 @@ export function MechanismPanel() {
   const mechanisms = useCardStore((s) => s.mechanisms);
   const addParallelFold = useCardStore((s) => s.addParallelFold);
 
+  const conflicts = useMemo(() => conflictingIds(mechanisms), [mechanisms]);
+
   return (
     <div className="mech-panel">
       <div className="mech-panel-head">
@@ -82,7 +95,7 @@ export function MechanismPanel() {
       {mechanisms.length === 0 && <p className="mech-empty">No mechanisms yet.</p>}
       {mechanisms.map((m, i) =>
         m.type === 'parallelFold' ? (
-          <ParallelFoldEditor key={m.id} m={m} index={i} />
+          <ParallelFoldEditor key={m.id} m={m} index={i} conflict={conflicts.has(m.id)} />
         ) : null,
       )}
     </div>

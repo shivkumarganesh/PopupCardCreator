@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { buildCardPattern } from '../core/flatPattern';
 import { patternToSvg } from '../core/svgExport';
+import { findConflicts } from '../core/validate';
 import { useCardStore } from '../state/store';
 
 /**
@@ -12,9 +13,10 @@ export function FlatPatternView() {
   const card = useCardStore((s) => s.card);
   const mechanisms = useCardStore((s) => s.mechanisms);
 
-  // The exporter validates the pattern and throws on laser-invalid geometry
-  // (e.g. two mechanisms overlapping into a double-burn). Surface that as a
-  // warning rather than letting it crash the app.
+  const conflicts = useMemo(() => findConflicts(mechanisms), [mechanisms]);
+
+  // The exporter also validates laser geometry and throws on defects the
+  // conflict check doesn't cover; surface either as a warning, never a crash.
   const { svg, error } = useMemo(() => {
     try {
       return { svg: patternToSvg(buildCardPattern(card, mechanisms)), error: null as string | null };
@@ -23,9 +25,11 @@ export function FlatPatternView() {
     }
   }, [card, mechanisms]);
 
+  const canExport = !!svg && conflicts.length === 0;
+
   const download = () => {
-    if (!svg) return;
-    const blob = new Blob([svg], { type: 'image/svg+xml' });
+    if (!canExport) return;
+    const blob = new Blob([svg!], { type: 'image/svg+xml' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -38,10 +42,16 @@ export function FlatPatternView() {
     <div className="flat-pattern">
       <div className="flat-pattern-header">
         <h2>Flat pattern</h2>
-        <button onClick={download} disabled={!svg}>
+        <button onClick={download} disabled={!canExport}>
           Export SVG
         </button>
       </div>
+      {conflicts.length > 0 && (
+        <div className="flat-pattern-error">
+          ⚠ {conflicts[0].message}
+          <span>Move or resize the highlighted step folds so they don’t overlap.</span>
+        </div>
+      )}
       {error ? (
         <div className="flat-pattern-error">
           ⚠ Cannot export: {error}

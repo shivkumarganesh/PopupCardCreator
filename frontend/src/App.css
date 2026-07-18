@@ -114,6 +114,17 @@
   border-radius: 8px;
 }
 
+.mech-item-conflict {
+  border-color: #b3892f;
+  background: rgba(242, 193, 78, 0.08);
+}
+
+.mech-conflict-note {
+  margin: 0;
+  color: #f2c14e;
+  font-size: 0.78rem;
+}
+
 .mech-item-head {
   font-weight: 600;
   color: #e86a5c;

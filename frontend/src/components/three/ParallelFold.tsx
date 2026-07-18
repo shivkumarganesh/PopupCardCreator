@@ -8,7 +8,8 @@ interface Props {
   card: CardParams;
   openAngleDeg: number;
   worldPerMm: number;
-  highlight?: boolean;
+  /** Tint yellow to flag an overlap with another mechanism. */
+  conflict?: boolean;
 }
 
 /**
@@ -19,7 +20,7 @@ interface Props {
  * the gutter. Two quads (left panel A→B, right panel B→C) are extruded along
  * the gutter over the strip's span.
  */
-export function ParallelFold({ mechanism, card, openAngleDeg, worldPerMm, highlight }: Props) {
+export function ParallelFold({ mechanism, card, openAngleDeg, worldPerMm, conflict }: Props) {
   const geometry = useMemo(() => {
     const theta = THREE.MathUtils.degToRad(openAngleDeg);
     const d = mechanism.depthMm;
@@ -57,7 +58,7 @@ export function ParallelFold({ mechanism, card, openAngleDeg, worldPerMm, highli
   return (
     <mesh geometry={geometry}>
       <meshStandardMaterial
-        color={highlight ? '#ffb454' : '#e86a5c'}
+        color={conflict ? '#f2c14e' : '#e86a5c'}
         side={THREE.DoubleSide}
         // Popup lies coplanar with the base card at 180°; bias it forward in
         // the depth buffer so it wins cleanly instead of z-fighting.
