@@ -1,0 +1,107 @@
+.app {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.pane {
+  height: 100%;
+  min-width: 0;
+}
+
+.pane-3d {
+  position: relative;
+  flex: 1.2;
+}
+
+.pane-2d {
+  flex: 1;
+  border-left: 1px solid #333;
+  background: #14151a;
+  overflow: auto;
+}
+
+.angle-control {
+  position: absolute;
+  left: 50%;
+  bottom: 1.25rem;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: min(420px, 80%);
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  background: rgba(20, 21, 26, 0.85);
+  color: #e8e6e0;
+  font-size: 0.9rem;
+}
+
+.angle-control input[type='range'] {
+  width: 100%;
+}
+
+.flat-pattern {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem;
+  color: #e8e6e0;
+}
+
+.flat-pattern-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.flat-pattern-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.flat-pattern-header button {
+  padding: 0.45rem 0.9rem;
+  border: none;
+  border-radius: 8px;
+  background: #4c6ef5;
+  color: #fff;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.flat-pattern-header button:hover {
+  background: #5c7cfa;
+}
+
+.flat-pattern-canvas {
+  background: #fff;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.flat-pattern-canvas svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.legend {
+  display: flex;
+  gap: 1.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+}
+
+.legend .swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 0.35rem;
+  border-radius: 2px;
+  vertical-align: -1px;
+}
