@@ -13,9 +13,11 @@ export interface BaseCardProps {
 /**
  * The base card: two rigid panels hinged along the gutter (the z-axis).
  *
- * At 180° both panels lie flat in the xz-plane; closing the card rotates each
- * panel symmetrically upward about the gutter, like a book standing on its
- * spine. The dihedral between the panels is exactly `openAngleDeg`.
+ * The card opens as a valley (∨): the gutter rests on the ground and the
+ * panels rise upward and outward, so pop-up mechanisms rise inside the
+ * valley. At 180° both panels lie flat in the xz-plane; at 0° they stand
+ * closed together pointing up. The dihedral between the panels is exactly
+ * `openAngleDeg`, matching the convention in `core/kinematics.ts`.
  */
 export function BaseCard({ openAngleDeg, panelWidth = 6.5, height = 9 }: BaseCardProps) {
   const halfDihedral = THREE.MathUtils.degToRad(openAngleDeg) / 2;
@@ -29,8 +31,8 @@ export function BaseCard({ openAngleDeg, panelWidth = 6.5, height = 9 }: BaseCar
 
   return (
     <group>
-      {/* Left panel: hinged at x = 0, extends toward -x */}
-      <group rotation={[0, 0, tilt]}>
+      {/* Left panel: hinged at x = 0, extends toward -x, rising in +y */}
+      <group rotation={[0, 0, -tilt]}>
         <mesh
           geometry={panelGeometry}
           position={[-panelWidth / 2, 0, 0]}
@@ -40,7 +42,7 @@ export function BaseCard({ openAngleDeg, panelWidth = 6.5, height = 9 }: BaseCar
         </mesh>
       </group>
       {/* Right panel: mirror image */}
-      <group rotation={[0, 0, -tilt]}>
+      <group rotation={[0, 0, tilt]}>
         <mesh
           geometry={panelGeometry}
           position={[panelWidth / 2, 0, 0]}

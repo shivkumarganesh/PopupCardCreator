@@ -12,7 +12,9 @@ laser-ready SVG flat patterns for cutters like the xTool M1 Ultra / F2.
   - `src/components/three/` — R3F components (`BaseCard`, scene).
   - Split-pane UI: 3D canvas with a 0–180° opening-angle slider on the left,
     live flat pattern + SVG export on the right.
-- `backend/` — FastAPI service for project persistence (JSON file storage).
+- `backend/` — dormant FastAPI skeleton. The app is currently frontend-only
+  (deployable to GitHub Pages); persistence uses the browser. The skeleton
+  stays for a possible future server.
 
 ## Laser conventions
 
@@ -32,16 +34,16 @@ releases the part.
 ## Run
 
 ```sh
-# Frontend
 cd frontend
 npm install
 npm run dev        # http://localhost:5173
-
-# Backend
-cd backend
-pip install -r requirements.txt
-uvicorn app.main:app --reload   # http://localhost:8000/api/health
+npm test           # kinematics unit tests (vitest)
+npm run build      # production build (served from /PopupCardCreator/ on Pages)
 ```
+
+Pushes to `main` deploy automatically to GitHub Pages via
+`.github/workflows/deploy.yml` (enable Pages → "GitHub Actions" as the
+source in the repo settings once).
 
 ## Kinematic model (roadmap)
 
@@ -51,8 +53,13 @@ revolute joints:
 - **V-fold** — spherical four-bar linkage; all creases concurrent at a vertex
   on the gutter. Loop closure: `cos B = cos A·cos δ + sin A·cos(Θ/2)·sin δ`
   (A = base sector angle, B = popup sector angle, Θ = card opening angle,
-  δ = central-crease elevation). Constraints: `B ≥ A` to open to 180° without
-  tearing; asymmetric variants need `A_L + B_L = A_R + B_R` to fold flat.
+  δ = central-crease elevation). The erect branch collapses to δ = A + B
+  when closed. Constraints: `B ≥ A` to open to 180° without tearing;
+  asymmetric variants need `A_L + B_L = A_R + B_R` to fold flat.
 - **Parallel/box fold** — planar four-bar in the cross-section perpendicular
-  to the gutter. Flat-fold condition `p + a = q + b`; containment
-  `max(p+a, q+b) ≤` half card width.
+  to the gutter. Closes flat iff `p + a = q + b`; opens to θ without binding
+  iff the popup spans its creases (`a + b ≥` crease separation at θ — a
+  slit-cut step fold has `a = q, b = p` and flattens exactly at 180°);
+  containment `max(p+a, q+b) ≤` half card width.
+
+Both solvers live in `frontend/src/core/kinematics.ts` with unit tests.
