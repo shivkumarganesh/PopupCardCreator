@@ -24,9 +24,11 @@ function gutterSpan(m: Mechanism): [number, number] | null {
   return null;
 }
 
-/** All pairwise conflicts among the mechanisms. */
+/** All conflicts among the mechanisms: overlaps and per-mechanism validity. */
 export function findConflicts(mechanisms: Mechanism[]): MechanismConflict[] {
   const conflicts: MechanismConflict[] = [];
+
+  // Pairwise: step folds must not overlap (they'd share the same material).
   for (let i = 0; i < mechanisms.length; i++) {
     for (let j = i + 1; j < mechanisms.length; j++) {
       const a = gutterSpan(mechanisms[i]);
@@ -41,6 +43,17 @@ export function findConflicts(mechanisms: Mechanism[]): MechanismConflict[] {
       }
     }
   }
+
+  // Per-mechanism: a V-fold needs popup angle ≥ base angle to open fully.
+  for (const m of mechanisms) {
+    if (m.type === 'vFold' && m.popupAngleDeg < m.baseAngleDeg - EPS) {
+      conflicts.push({
+        ids: [m.id],
+        message: 'V-fold binds before fully open — popup angle must be ≥ base angle.',
+      });
+    }
+  }
+
   return conflicts;
 }
 

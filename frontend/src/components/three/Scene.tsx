@@ -5,6 +5,7 @@ import { useCardStore } from '../../state/store';
 import { conflictingIds } from '../../core/validate';
 import { BaseCard } from './BaseCard';
 import { ParallelFold } from './ParallelFold';
+import { VFold } from './VFold';
 
 /** World units per millimetre: a 130 mm panel becomes 6.5 world units. */
 const WORLD_PER_MM = 1 / 20;
@@ -37,7 +38,16 @@ export function Scene() {
             worldPerMm={WORLD_PER_MM}
             conflict={conflicts.has(m.id)}
           />
-        ) : null,
+        ) : (
+          <VFold
+            key={m.id}
+            mechanism={m}
+            card={card}
+            openAngleDeg={openAngleDeg}
+            worldPerMm={WORLD_PER_MM}
+            conflict={conflicts.has(m.id)}
+          />
+        ),
       )}
       <gridHelper args={[30, 30, '#3a3f4c', '#2a2e38']} position={[0, -0.05, 0]} />
       <OrbitControls makeDefault target={[0, 2, 0]} minDistance={4} maxDistance={40} />

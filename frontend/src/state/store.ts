@@ -34,6 +34,18 @@ function defaultParallelFold(card: CardParams, existing: Mechanism[]): Mechanism
   return { id: newId(), type: 'parallelFold', centreMm, spanMm, depthMm };
 }
 
+function defaultVFold(card: CardParams): Mechanism {
+  return {
+    id: newId(),
+    type: 'vFold',
+    centreMm: card.heightMm / 2,
+    baseAngleDeg: 45,
+    popupAngleDeg: 60,
+    armMm: Math.min(50, card.heightMm * 0.3, card.panelWidthMm * 0.6),
+    tabMm: 10,
+  };
+}
+
 interface CardStore {
   /** Card opening angle in degrees: 0 = closed, 180 = flat open. */
   openAngleDeg: number;
@@ -42,6 +54,7 @@ interface CardStore {
   setOpenAngleDeg: (deg: number) => void;
   setCard: (card: Partial<CardParams>) => void;
   addParallelFold: () => void;
+  addVFold: () => void;
   updateMechanism: (id: string, patch: Partial<Mechanism>) => void;
   removeMechanism: (id: string) => void;
 }
@@ -59,6 +72,8 @@ export const useCardStore = create<CardStore>((set) => ({
     set((s) => ({
       mechanisms: [...s.mechanisms, defaultParallelFold(s.card, s.mechanisms)],
     })),
+  addVFold: () =>
+    set((s) => ({ mechanisms: [...s.mechanisms, defaultVFold(s.card)] })),
   updateMechanism: (id, patch) =>
     set((s) => ({
       mechanisms: s.mechanisms.map((m) =>

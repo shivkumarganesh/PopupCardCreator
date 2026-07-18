@@ -33,4 +33,19 @@ describe('findConflicts', () => {
     expect(ids.has('b')).toBe(true);
     expect(ids.has('c')).toBe(false);
   });
+
+  it('flags a V-fold whose popup angle is below its base angle', () => {
+    const bad = {
+      id: 'v',
+      type: 'vFold' as const,
+      centreMm: 90,
+      baseAngleDeg: 60,
+      popupAngleDeg: 45,
+      armMm: 50,
+      tabMm: 10,
+    };
+    expect(findConflicts([bad])).toHaveLength(1);
+    // A valid V-fold (B ≥ A) is fine.
+    expect(findConflicts([{ ...bad, popupAngleDeg: 70 }])).toHaveLength(0);
+  });
 });

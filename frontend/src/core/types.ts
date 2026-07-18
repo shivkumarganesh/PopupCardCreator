@@ -60,7 +60,31 @@ export interface ParallelFoldMechanism {
   depthMm: number;
 }
 
-export type Mechanism = ParallelFoldMechanism;
+/**
+ * A symmetric V-fold (angle fold): a glued patch, not cut from the card.
+ *
+ * Two wings meet at a central mountain crease rising from a vertex on the
+ * gutter; each wing folds down to an attachment crease on a base panel where
+ * a glue tab holds it. Modelled as a spherical four-bar (see `solveVFold`):
+ * the popup sector angle B must be ≥ the base sector angle A for the fold to
+ * open fully to 180° without tearing.
+ */
+export interface VFoldMechanism {
+  id: string;
+  type: 'vFold';
+  /** Vertex position from the top edge, along the gutter (mm). */
+  centreMm: number;
+  /** Base sector angle A: gutter → attachment crease (degrees). */
+  baseAngleDeg: number;
+  /** Popup sector angle B: attachment crease → central crease (degrees). */
+  popupAngleDeg: number;
+  /** Length of the creases measured from the vertex (mm). */
+  armMm: number;
+  /** Glue-tab width along each attachment crease (mm). */
+  tabMm: number;
+}
+
+export type Mechanism = ParallelFoldMechanism | VFoldMechanism;
 
 /** Laser color conventions (xTool XCS maps operations by stroke color). */
 export const LASER_COLORS: Record<LineKind, string> = {

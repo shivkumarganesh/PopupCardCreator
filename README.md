@@ -63,3 +63,8 @@ revolute joints:
   containment `max(p+a, q+b) ≤` half card width.
 
 Both solvers live in `frontend/src/core/kinematics.ts` with unit tests.
+
+Implemented mechanisms: the **step/box fold** (cut from the card, windows the
+panels where the strip lifts) and the **V-fold** (a separate glued patch laid
+out below the card on the sheet). Overlapping step folds and invalid V-folds
+(popup angle < base angle) are detected and block export.

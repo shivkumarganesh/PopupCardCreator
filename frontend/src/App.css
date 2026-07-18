@@ -89,14 +89,28 @@
   font-weight: 600;
 }
 
-.mech-panel-head button {
-  padding: 0.3rem 0.55rem;
+.mech-add-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.mech-add-row button {
+  flex: 1;
+  padding: 0.35rem 0.55rem;
   border: none;
   border-radius: 6px;
   background: #4c6ef5;
   color: #fff;
   font-size: 0.78rem;
   cursor: pointer;
+}
+
+.mech-add-row button:last-child {
+  background: #3f6fc4;
+}
+
+.mech-item-vfold .mech-item-head {
+  color: #5c8ce8;
 }
 
 .mech-empty {

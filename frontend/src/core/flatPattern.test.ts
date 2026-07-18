@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildCardPattern } from './flatPattern';
 import { patternToSvg } from './svgExport';
-import type { ParallelFoldMechanism } from './types';
+import type { ParallelFoldMechanism, VFoldMechanism } from './types';
 
 const card = { panelWidthMm: 130, heightMm: 180 };
 const fold = (id: string, centreMm: number): ParallelFoldMechanism => ({
@@ -10,6 +10,15 @@ const fold = (id: string, centreMm: number): ParallelFoldMechanism => ({
   centreMm,
   spanMm: 60,
   depthMm: 30,
+});
+const vfold = (id: string): VFoldMechanism => ({
+  id,
+  type: 'vFold',
+  centreMm: 90,
+  baseAngleDeg: 45,
+  popupAngleDeg: 60,
+  armMm: 50,
+  tabMm: 10,
 });
 
 describe('buildCardPattern', () => {
@@ -51,5 +60,21 @@ describe('buildCardPattern', () => {
     expect(svg).toContain('#0000FF'); // mountain
     expect(svg).toContain('#00FF00'); // valley
     expect(svg).toContain('width="260mm"');
+  });
+
+  it('lays a V-fold patch out below the card, growing the sheet', () => {
+    const base = buildCardPattern(card, []);
+    const withV = buildCardPattern(card, [vfold('v1')]);
+    // The sheet grows downward to fit the patch.
+    expect(withV.heightMm).toBeGreaterThan(base.heightMm);
+    // Patch adds a second closed cut outline (card boundary + patch outline).
+    const closedCuts = withV.lines.filter((l) => l.kind === 'cut' && l.closed);
+    expect(closedCuts).toHaveLength(2);
+    // Patch contributes a central mountain crease and two valley creases below
+    // the card (y > card height).
+    const belowCard = withV.lines.filter((l) => l.points.every((p) => p.y > card.heightMm));
+    expect(belowCard.some((l) => l.kind === 'mountain')).toBe(true);
+    expect(belowCard.filter((l) => l.kind === 'valley')).toHaveLength(2);
+    expect(() => patternToSvg(withV)).not.toThrow();
   });
 });
