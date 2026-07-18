@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useCardStore } from '../state/store';
-import { conflictingIds } from '../core/validate';
+import { conflictMessages } from '../core/validate';
 import type { ParallelFoldMechanism, VFoldMechanism } from '../core/types';
 
 function Slider({
@@ -38,25 +38,25 @@ function Slider({
 function ParallelFoldEditor({
   m,
   index,
-  conflict,
+  warning,
 }: {
   m: ParallelFoldMechanism;
   index: number;
-  conflict: boolean;
+  warning?: string;
 }) {
   const card = useCardStore((s) => s.card);
   const update = useCardStore((s) => s.updateMechanism);
   const remove = useCardStore((s) => s.removeMechanism);
 
   return (
-    <div className={`mech-item${conflict ? ' mech-item-conflict' : ''}`}>
+    <div className={`mech-item${warning ? ' mech-item-conflict' : ''}`}>
       <div className="mech-item-head">
         <span>Step fold {index + 1}</span>
         <button onClick={() => remove(m.id)} title="Remove">
           ✕
         </button>
       </div>
-      {conflict && <p className="mech-conflict-note">⚠ Overlaps another step fold</p>}
+      {warning && <p className="mech-conflict-note">⚠ {warning}</p>}
       <Slider
         label="Position"
         value={m.centreMm}
@@ -85,27 +85,25 @@ function ParallelFoldEditor({
 function VFoldEditor({
   m,
   index,
-  conflict,
+  warning,
 }: {
   m: VFoldMechanism;
   index: number;
-  conflict: boolean;
+  warning?: string;
 }) {
   const card = useCardStore((s) => s.card);
   const update = useCardStore((s) => s.updateMechanism);
   const remove = useCardStore((s) => s.removeMechanism);
 
   return (
-    <div className={`mech-item mech-item-vfold${conflict ? ' mech-item-conflict' : ''}`}>
+    <div className={`mech-item mech-item-vfold${warning ? ' mech-item-conflict' : ''}`}>
       <div className="mech-item-head">
         <span>V-fold {index + 1}</span>
         <button onClick={() => remove(m.id)} title="Remove">
           ✕
         </button>
       </div>
-      {conflict && (
-        <p className="mech-conflict-note">⚠ Popup angle must be ≥ base angle</p>
-      )}
+      {warning && <p className="mech-conflict-note">⚠ {warning}</p>}
       <Slider
         label="Position"
         value={m.centreMm}
@@ -145,7 +143,7 @@ export function MechanismPanel() {
   const addParallelFold = useCardStore((s) => s.addParallelFold);
   const addVFold = useCardStore((s) => s.addVFold);
 
-  const conflicts = useMemo(() => conflictingIds(mechanisms), [mechanisms]);
+  const warnings = useMemo(() => conflictMessages(mechanisms), [mechanisms]);
 
   return (
     <div className="mech-panel">
@@ -159,9 +157,9 @@ export function MechanismPanel() {
       {mechanisms.length === 0 && <p className="mech-empty">No mechanisms yet.</p>}
       {mechanisms.map((m, i) =>
         m.type === 'parallelFold' ? (
-          <ParallelFoldEditor key={m.id} m={m} index={i} conflict={conflicts.has(m.id)} />
+          <ParallelFoldEditor key={m.id} m={m} index={i} warning={warnings.get(m.id)} />
         ) : (
-          <VFoldEditor key={m.id} m={m} index={i} conflict={conflicts.has(m.id)} />
+          <VFoldEditor key={m.id} m={m} index={i} warning={warnings.get(m.id)} />
         ),
       )}
     </div>

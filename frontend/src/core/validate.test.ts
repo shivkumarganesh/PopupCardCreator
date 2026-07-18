@@ -34,6 +34,38 @@ describe('findConflicts', () => {
     expect(ids.has('c')).toBe(false);
   });
 
+  it('flags a V-fold overlapping a step fold at the same position', () => {
+    const step = fold('s', 101); // spans [71, 131]
+    const v = {
+      id: 'v',
+      type: 'vFold' as const,
+      centreMm: 101,
+      baseAngleDeg: 49,
+      popupAngleDeg: 60,
+      armMm: 50,
+      tabMm: 10,
+    };
+    const conflicts = findConflicts([step, v]);
+    expect(conflicts.length).toBeGreaterThanOrEqual(1);
+    const ids = conflictingIds([step, v]);
+    expect(ids.has('s')).toBe(true);
+    expect(ids.has('v')).toBe(true);
+  });
+
+  it('does not flag a V-fold placed well clear of a step fold', () => {
+    const step = fold('s', 40); // spans [10, 70]
+    const v = {
+      id: 'v',
+      type: 'vFold' as const,
+      centreMm: 160,
+      baseAngleDeg: 45,
+      popupAngleDeg: 60,
+      armMm: 40,
+      tabMm: 10,
+    };
+    expect(findConflicts([step, v])).toHaveLength(0);
+  });
+
   it('flags a V-fold whose popup angle is below its base angle', () => {
     const bad = {
       id: 'v',
