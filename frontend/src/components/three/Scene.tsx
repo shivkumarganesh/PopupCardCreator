@@ -20,8 +20,9 @@ export function Scene() {
       <directionalLight position={[-6, 4, -4]} intensity={0.3} />
       <BaseCard
         openAngleDeg={openAngleDeg}
-        panelWidth={card.panelWidthMm * WORLD_PER_MM}
-        height={card.heightMm * WORLD_PER_MM}
+        card={card}
+        mechanisms={mechanisms}
+        worldPerMm={WORLD_PER_MM}
       />
       {mechanisms.map((m) =>
         m.type === 'parallelFold' ? (

@@ -12,12 +12,19 @@ export function FlatPatternView() {
   const card = useCardStore((s) => s.card);
   const mechanisms = useCardStore((s) => s.mechanisms);
 
-  const svg = useMemo(
-    () => patternToSvg(buildCardPattern(card, mechanisms)),
-    [card, mechanisms],
-  );
+  // The exporter validates the pattern and throws on laser-invalid geometry
+  // (e.g. two mechanisms overlapping into a double-burn). Surface that as a
+  // warning rather than letting it crash the app.
+  const { svg, error } = useMemo(() => {
+    try {
+      return { svg: patternToSvg(buildCardPattern(card, mechanisms)), error: null as string | null };
+    } catch (e) {
+      return { svg: null, error: e instanceof Error ? e.message : String(e) };
+    }
+  }, [card, mechanisms]);
 
   const download = () => {
+    if (!svg) return;
     const blob = new Blob([svg], { type: 'image/svg+xml' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -31,13 +38,22 @@ export function FlatPatternView() {
     <div className="flat-pattern">
       <div className="flat-pattern-header">
         <h2>Flat pattern</h2>
-        <button onClick={download}>Export SVG</button>
+        <button onClick={download} disabled={!svg}>
+          Export SVG
+        </button>
       </div>
-      <div
-        className="flat-pattern-canvas"
-        // Rendering the exact export string guarantees WYSIWYG with the laser file.
-        dangerouslySetInnerHTML={{ __html: svg }}
-      />
+      {error ? (
+        <div className="flat-pattern-error">
+          ⚠ Cannot export: {error}
+          <span>Adjust the mechanisms so they don’t overlap.</span>
+        </div>
+      ) : (
+        <div
+          className="flat-pattern-canvas"
+          // Rendering the exact export string guarantees WYSIWYG with the laser file.
+          dangerouslySetInnerHTML={{ __html: svg! }}
+        />
+      )}
       <ul className="legend">
         <li><span className="swatch" style={{ background: '#FF0000' }} /> Cut</li>
         <li><span className="swatch" style={{ background: '#0000FF' }} /> Mountain fold (score)</li>

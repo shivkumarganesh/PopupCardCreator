@@ -238,6 +238,28 @@
   padding: 12px;
 }
 
+.flat-pattern-error {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1rem;
+  border: 1px solid #6b3a3a;
+  border-radius: 6px;
+  background: #241a1a;
+  color: #f0b6b6;
+  font-size: 0.9rem;
+}
+
+.flat-pattern-error span {
+  color: #b89a9a;
+  font-size: 0.8rem;
+}
+
+.flat-pattern-header button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .flat-pattern-canvas svg {
   display: block;
   width: 100%;

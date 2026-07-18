@@ -57,6 +57,33 @@ function addParallelFold(
   return [y0, y1];
 }
 
+const round3 = (v: number) => Math.round(v * 1000) / 1000;
+
+/** Direction-independent key for a line, so coincident lines can be merged. */
+function lineKey(line: PatternLine): string {
+  const pts = line.points.map((p) => `${round3(p.x)},${round3(p.y)}`);
+  const fwd = pts.join(' ');
+  const rev = [...pts].reverse().join(' ');
+  const body = line.closed ? fwd : fwd < rev ? fwd : rev;
+  return `${line.kind}|${line.closed ? 'C' : 'O'}|${body}`;
+}
+
+/**
+ * Drop coincident duplicate lines. Adjacent step folds legitimately share a
+ * slit cut; emitting it once avoids a double-burn without losing geometry.
+ */
+function dedupeLines(lines: PatternLine[]): PatternLine[] {
+  const seen = new Set<string>();
+  const out: PatternLine[] = [];
+  for (const line of lines) {
+    const key = lineKey(line);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(line);
+  }
+  return out;
+}
+
 /**
  * Build the flat pattern for the base card plus its mechanisms: the outer
  * boundary cut, each mechanism's cut/score lines, and the gutter valley
@@ -97,5 +124,5 @@ export function buildCardPattern(
     }
   }
 
-  return { widthMm: width, heightMm: height, lines };
+  return { widthMm: width, heightMm: height, lines: dedupeLines(lines) };
 }
