@@ -42,6 +42,77 @@
   width: 100%;
 }
 
+.card-control {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: 250px;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  background: rgba(20, 21, 26, 0.85);
+  color: #e8e6e0;
+  font-size: 0.85rem;
+}
+
+.card-control h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.card-control-row {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.card-control label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex: 1;
+  color: #b6b3ab;
+}
+
+.unit-input {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #b6b3ab;
+}
+
+.card-control input[type='number'] {
+  width: 100%;
+  min-width: 0;
+  padding: 0.35rem 0.4rem;
+  border: 1px solid #3a3f4c;
+  border-radius: 6px;
+  background: #14151a;
+  color: #e8e6e0;
+  font-size: 0.85rem;
+}
+
+.card-control select {
+  padding: 0.35rem 0.4rem;
+  border: 1px solid #3a3f4c;
+  border-radius: 6px;
+  background: #14151a;
+  color: #e8e6e0;
+  font-size: 0.85rem;
+}
+
+.card-control-preset {
+  flex-direction: column;
+}
+
+.card-control-note {
+  margin: 0;
+  color: #8a8780;
+  font-size: 0.78rem;
+}
+
 .flat-pattern {
   display: flex;
   flex-direction: column;
