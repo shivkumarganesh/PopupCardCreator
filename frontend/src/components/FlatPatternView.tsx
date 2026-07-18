@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { buildBaseCardPattern } from '../core/flatPattern';
+import { buildCardPattern } from '../core/flatPattern';
 import { patternToSvg } from '../core/svgExport';
 import { useCardStore } from '../state/store';
 
@@ -10,8 +10,12 @@ import { useCardStore } from '../state/store';
  */
 export function FlatPatternView() {
   const card = useCardStore((s) => s.card);
+  const mechanisms = useCardStore((s) => s.mechanisms);
 
-  const svg = useMemo(() => patternToSvg(buildBaseCardPattern(card)), [card]);
+  const svg = useMemo(
+    () => patternToSvg(buildCardPattern(card, mechanisms)),
+    [card, mechanisms],
+  );
 
   const download = () => {
     const blob = new Blob([svg], { type: 'image/svg+xml' });

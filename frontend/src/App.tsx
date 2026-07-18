@@ -1,6 +1,7 @@
 import { Scene } from './components/three/Scene';
 import { FlatPatternView } from './components/FlatPatternView';
 import { CardControls } from './components/CardControls';
+import { MechanismPanel } from './components/MechanismPanel';
 import { useCardStore } from './state/store';
 import './App.css';
 
@@ -12,7 +13,10 @@ export default function App() {
     <div className="app">
       <div className="pane pane-3d">
         <Scene />
-        <CardControls />
+        <div className="left-panels">
+          <CardControls />
+          <MechanismPanel />
+        </div>
         <div className="angle-control">
           <label htmlFor="open-angle">
             Opening angle: <strong>{openAngleDeg}°</strong>

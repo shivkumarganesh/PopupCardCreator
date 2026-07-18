@@ -38,6 +38,30 @@ export interface CardParams {
   heightMm: number;
 }
 
+/**
+ * A symmetric single-slit box/step fold cut directly from the base card.
+ *
+ * Two slits run perpendicular to the gutter; the freed strip between them
+ * reverses its gutter crease (mountain instead of the card's valley) and
+ * rises as a peak when the card opens. Cut-from-sheet, so it needs no glue
+ * and flattens back into its own slot at 180°.
+ */
+export interface ParallelFoldMechanism {
+  id: string;
+  type: 'parallelFold';
+  /** Distance from the top edge to the strip centre, along the gutter (mm). */
+  centreMm: number;
+  /** Strip width measured along the gutter (mm). */
+  spanMm: number;
+  /**
+   * Crease depth from the gutter to each base crease (mm). Also the pop
+   * projection: the peak reaches height 2·depth·cos(θ/2) above the gutter.
+   */
+  depthMm: number;
+}
+
+export type Mechanism = ParallelFoldMechanism;
+
 /** Laser color conventions (xTool XCS maps operations by stroke color). */
 export const LASER_COLORS: Record<LineKind, string> = {
   cut: '#FF0000',
