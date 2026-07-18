@@ -64,7 +64,15 @@ revolute joints:
 
 Both solvers live in `frontend/src/core/kinematics.ts` with unit tests.
 
-Implemented mechanisms: the **step/box fold** (cut from the card, windows the
-panels where the strip lifts) and the **V-fold** (a separate glued patch laid
-out below the card on the sheet). Overlapping step folds and invalid V-folds
-(popup angle < base angle) are detected and block export.
+Implemented mechanisms:
+
+- **Step/box fold** — cut from the card; windows the panels where the strip lifts.
+- **V-fold** — two mounting methods, toggled per fold:
+  - *Glue*: a self-supporting patch (wings joined at a ridge off the gutter),
+    cut as a separate piece below the card and pasted on — no hollow.
+  - *Cut*: a triangular "beak" cut from the card itself (the gutter reverses to
+    a mountain ridge), leaving a triangular hollow — no gluing.
+
+Overlapping mechanisms and invalid configurations (glued V-fold with popup
+angle < base angle; cut beak too wide for the card) are detected and block
+export.

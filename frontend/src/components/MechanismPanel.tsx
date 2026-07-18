@@ -104,6 +104,27 @@ function VFoldEditor({
         </button>
       </div>
       {warning && <p className="mech-conflict-note">⚠ {warning}</p>}
+
+      <div className="mech-mount-toggle">
+        <button
+          className={m.mount === 'cut' ? 'active' : ''}
+          onClick={() => update(m.id, { mount: 'cut' })}
+        >
+          Cut (slit)
+        </button>
+        <button
+          className={m.mount === 'glued' ? 'active' : ''}
+          onClick={() => update(m.id, { mount: 'glued' })}
+        >
+          Glue (paste)
+        </button>
+      </div>
+      <p className="mech-mount-hint">
+        {m.mount === 'cut'
+          ? 'Cut from the card — leaves a triangular hollow, no gluing.'
+          : 'Separate patch (below the card) — fold and paste it on.'}
+      </p>
+
       <Slider
         label="Position"
         value={m.centreMm}
@@ -111,29 +132,51 @@ function VFoldEditor({
         max={card.heightMm}
         onChange={(v) => update(m.id, { centreMm: v })}
       />
-      <Slider
-        label="Base angle"
-        value={m.baseAngleDeg}
-        min={10}
-        max={80}
-        unit="°"
-        onChange={(v) => update(m.id, { baseAngleDeg: v })}
-      />
-      <Slider
-        label="Popup angle"
-        value={m.popupAngleDeg}
-        min={10}
-        max={85}
-        unit="°"
-        onChange={(v) => update(m.id, { popupAngleDeg: v })}
-      />
-      <Slider
-        label="Arm length"
-        value={m.armMm}
-        min={10}
-        max={Math.min(card.heightMm, card.panelWidthMm)}
-        onChange={(v) => update(m.id, { armMm: v })}
-      />
+      {m.mount === 'cut' ? (
+        <>
+          <Slider
+            label="Ridge length"
+            value={m.armMm}
+            min={10}
+            max={card.heightMm}
+            onChange={(v) => update(m.id, { armMm: v })}
+          />
+          <Slider
+            label="Spread"
+            value={m.spreadAngleDeg}
+            min={10}
+            max={75}
+            unit="°"
+            onChange={(v) => update(m.id, { spreadAngleDeg: v })}
+          />
+        </>
+      ) : (
+        <>
+          <Slider
+            label="Base angle"
+            value={m.baseAngleDeg}
+            min={10}
+            max={80}
+            unit="°"
+            onChange={(v) => update(m.id, { baseAngleDeg: v })}
+          />
+          <Slider
+            label="Popup angle"
+            value={m.popupAngleDeg}
+            min={10}
+            max={85}
+            unit="°"
+            onChange={(v) => update(m.id, { popupAngleDeg: v })}
+          />
+          <Slider
+            label="Arm length"
+            value={m.armMm}
+            min={10}
+            max={Math.min(card.heightMm, card.panelWidthMm)}
+            onChange={(v) => update(m.id, { armMm: v })}
+          />
+        </>
+      )}
     </div>
   );
 }
@@ -143,7 +186,8 @@ export function MechanismPanel() {
   const addParallelFold = useCardStore((s) => s.addParallelFold);
   const addVFold = useCardStore((s) => s.addVFold);
 
-  const warnings = useMemo(() => conflictMessages(mechanisms), [mechanisms]);
+  const card = useCardStore((s) => s.card);
+  const warnings = useMemo(() => conflictMessages(mechanisms, card), [mechanisms, card]);
 
   return (
     <div className="mech-panel">

@@ -113,6 +113,35 @@
   color: #5c8ce8;
 }
 
+.mech-mount-toggle {
+  display: flex;
+  gap: 0;
+  border: 1px solid #3a3f4c;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.mech-mount-toggle button {
+  flex: 1;
+  padding: 0.35rem 0.4rem;
+  border: none;
+  background: #14151a;
+  color: #b6b3ab;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.mech-mount-toggle button.active {
+  background: #3f6fc4;
+  color: #fff;
+}
+
+.mech-mount-hint {
+  margin: 0;
+  color: #8a8780;
+  font-size: 0.75rem;
+}
+
 .mech-empty {
   margin: 0;
   color: #8a8780;

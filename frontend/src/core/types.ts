@@ -72,15 +72,29 @@ export interface ParallelFoldMechanism {
 export interface VFoldMechanism {
   id: string;
   type: 'vFold';
+  /**
+   * How the V-fold is realised:
+   *  - 'glued': a separate patch cut elsewhere on the sheet, folded and pasted
+   *    onto the card. Self-supporting (wings joined at a mountain ridge off the
+   *    gutter), no hollow in the card.
+   *  - 'cut': a triangular beak cut from the card itself (the gutter reverses
+   *    to a mountain ridge), leaving a triangular hollow. No gluing.
+   */
+  mount: 'glued' | 'cut';
   /** Vertex position from the top edge, along the gutter (mm). */
   centreMm: number;
-  /** Base sector angle A: gutter → attachment crease (degrees). */
+  /** Base sector angle A: gutter → attachment crease (degrees). Glued mode. */
   baseAngleDeg: number;
-  /** Popup sector angle B: attachment crease → central crease (degrees). */
+  /** Popup sector angle B: attachment crease → central crease (degrees). Glued mode. */
   popupAngleDeg: number;
-  /** Length of the creases measured from the vertex (mm). */
+  /**
+   * Glued mode: length of the creases from the vertex (mm).
+   * Cut mode: length of the beak's ridge along the gutter (mm).
+   */
   armMm: number;
-  /** Glue-tab width along each attachment crease (mm). */
+  /** Half-spread angle of the beak at the apex (degrees). Cut mode. */
+  spreadAngleDeg: number;
+  /** Glue-tab width along each attachment crease (mm). Glued mode. */
   tabMm: number;
 }
 

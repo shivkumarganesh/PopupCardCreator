@@ -14,10 +14,12 @@ const fold = (id: string, centreMm: number): ParallelFoldMechanism => ({
 const vfold = (id: string): VFoldMechanism => ({
   id,
   type: 'vFold',
+  mount: 'glued',
   centreMm: 90,
   baseAngleDeg: 45,
   popupAngleDeg: 60,
   armMm: 50,
+  spreadAngleDeg: 40,
   tabMm: 10,
 });
 
@@ -60,6 +62,21 @@ describe('buildCardPattern', () => {
     expect(svg).toContain('#0000FF'); // mountain
     expect(svg).toContain('#00FF00'); // valley
     expect(svg).toContain('width="260mm"');
+  });
+
+  it('draws a cut V-fold on the card (slit + creases), no separate patch', () => {
+    const cut = { ...vfold('v1'), mount: 'cut' as const };
+    const p = buildCardPattern(card, [cut]);
+    // Stays on the card — the sheet does not grow.
+    expect(p.heightMm).toBe(card.heightMm);
+    // Only the card boundary is a closed cut (no patch outline).
+    expect(p.lines.filter((l) => l.kind === 'cut' && l.closed)).toHaveLength(1);
+    // A slit cut, a mountain ridge, and two valley attachment creases.
+    expect(p.lines.filter((l) => l.kind === 'cut' && !l.closed)).toHaveLength(1);
+    expect(p.lines.some((l) => l.kind === 'mountain')).toBe(true);
+    // Gutter valley is split around the beak (2 segments) + 2 attachment creases.
+    expect(p.lines.filter((l) => l.kind === 'valley').length).toBeGreaterThanOrEqual(4);
+    expect(() => patternToSvg(p)).not.toThrow();
   });
 
   it('lays a V-fold patch out below the card, growing the sheet', () => {

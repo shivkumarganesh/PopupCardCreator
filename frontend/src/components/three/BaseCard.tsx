@@ -10,36 +10,48 @@ export interface BaseCardProps {
   worldPerMm: number;
 }
 
-/** A notch on the gutter edge of a panel: [z0, z1] range, `depth` inward. */
+/**
+ * A notch removed from the gutter edge of a panel over [z0, z1], with inward
+ * depth `depth0` at z0 and `depth1` at z1 (linear between). A rectangle
+ * (step fold) has depth0 = depth1; a triangular beak (cut V-fold) tapers one
+ * end to 0.
+ */
 interface Notch {
   z0: number;
   z1: number;
-  depth: number;
+  depth0: number;
+  depth1: number;
 }
 
-/** Merge overlapping notch intervals, keeping the deepest, so the panel
- * outline stays a simple (non-self-intersecting) polygon. */
+/** Merge overlapping equal-depth rectangular notches so adjacent step folds
+ * share a clean edge; other notches pass through untouched. */
 function mergeNotches(notches: Notch[]): Notch[] {
   const sorted = [...notches].sort((a, b) => a.z0 - b.z0);
-  const merged: Notch[] = [];
+  const out: Notch[] = [];
   for (const n of sorted) {
-    const last = merged[merged.length - 1];
-    if (last && n.z0 <= last.z1) {
+    const last = out[out.length - 1];
+    const rectangular = (x: Notch) => Math.abs(x.depth0 - x.depth1) < 1e-9;
+    if (
+      last &&
+      rectangular(last) &&
+      rectangular(n) &&
+      Math.abs(last.depth0 - n.depth0) < 1e-9 &&
+      n.z0 <= last.z1 + 1e-9
+    ) {
       last.z1 = Math.max(last.z1, n.z1);
-      last.depth = Math.max(last.depth, n.depth);
     } else {
-      merged.push({ ...n });
+      out.push({ ...n });
     }
   }
-  return merged;
+  return out;
 }
 
 /**
  * Build one panel as a flat shape in the gutter-local (u, v) plane, where
  * u = distance from the gutter (0 → panelWidth) and v = position along the
- * gutter. Each mechanism removes a notch of `depth` from the gutter edge over
- * its strip range, because that material lifts away to form the popup — so
- * the card shows a window there, not solid card.
+ * gutter. Each mechanism removes a notch from the gutter edge where its
+ * material lifts away to form the popup — so the card shows a window there,
+ * not solid card.
  */
 function buildPanelGeometry(
   panelWidth: number,
@@ -53,8 +65,8 @@ function buildPanelGeometry(
   shape.moveTo(0, -height / 2);
   for (const n of merged) {
     shape.lineTo(0, n.z0);
-    shape.lineTo(n.depth, n.z0);
-    shape.lineTo(n.depth, n.z1);
+    shape.lineTo(n.depth0, n.z0);
+    shape.lineTo(n.depth1, n.z1);
     shape.lineTo(0, n.z1);
   }
   shape.lineTo(0, height / 2);
@@ -92,7 +104,15 @@ export function BaseCard({ openAngleDeg, card, mechanisms, worldPerMm }: BaseCar
       if (m.type === 'parallelFold') {
         const z0 = zAt(m.centreMm + m.spanMm / 2); // smaller z (lower)
         const z1 = zAt(m.centreMm - m.spanMm / 2); // larger z (upper)
-        out.push({ z0, z1, depth: Math.min(m.depthMm * W, panelWidth) });
+        const depth = Math.min(m.depthMm * W, panelWidth);
+        out.push({ z0, z1, depth0: depth, depth1: depth });
+      } else if (m.type === 'vFold' && m.mount === 'cut') {
+        // Triangular beak hollow: apex on the gutter (depth 0) widening to the
+        // slit end (depth d).
+        const d = Math.min(m.armMm * Math.tan((m.spreadAngleDeg * Math.PI) / 180) * W, panelWidth);
+        const zApex = zAt(m.centreMm); // larger z (upper)
+        const zSlit = zAt(m.centreMm + m.armMm); // smaller z (lower)
+        out.push({ z0: zSlit, z1: zApex, depth0: d, depth1: 0 });
       }
     }
     return out;

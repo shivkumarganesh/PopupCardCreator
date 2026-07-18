@@ -124,6 +124,41 @@ function vFoldPatchLocal(m: VFoldMechanism): PatchGeom {
   };
 }
 
+/** Half-width of a cut V-fold beak at its slit end (mm). */
+export function beakHalfWidth(m: VFoldMechanism): number {
+  return m.armMm * Math.tan((m.spreadAngleDeg * Math.PI) / 180);
+}
+
+/**
+ * Add a cut ("beak") V-fold's lines to the pattern, drawn on the card itself,
+ * and return the gutter interval it occupies (apex → slit).
+ *
+ * Crease pattern (a triangular relative of the step fold):
+ *   - one slit cut across the gutter at the wide end;
+ *   - two valley attachment creases from the slit ends to the apex;
+ *   - the gutter reverses to a mountain ridge between apex and slit.
+ */
+function addCutVFold(
+  lines: PatternLine[],
+  gutterX: number,
+  m: VFoldMechanism,
+): Interval {
+  const yApex = m.centreMm;
+  const ySlit = m.centreMm + m.armMm;
+  const d = beakHalfWidth(m);
+
+  lines.push({
+    kind: 'cut',
+    closed: false,
+    points: [{ x: gutterX - d, y: ySlit }, { x: gutterX + d, y: ySlit }],
+  });
+  lines.push({ kind: 'valley', closed: false, points: insetSeg({ x: gutterX - d, y: ySlit }, { x: gutterX, y: yApex }, SCORE_INSET_MM) });
+  lines.push({ kind: 'valley', closed: false, points: insetSeg({ x: gutterX + d, y: ySlit }, { x: gutterX, y: yApex }, SCORE_INSET_MM) });
+  lines.push({ kind: 'mountain', closed: false, points: insetSeg({ x: gutterX, y: yApex }, { x: gutterX, y: ySlit }, SCORE_INSET_MM) });
+
+  return [yApex, ySlit];
+}
+
 const round3 = (v: number) => Math.round(v * 1000) / 1000;
 
 /** Direction-independent key for a line, so coincident lines can be merged. */
@@ -180,6 +215,8 @@ export function buildCardPattern(
   for (const m of mechanisms) {
     if (m.type === 'parallelFold') {
       occupied.push(addParallelFold(lines, gutterX, m));
+    } else if (m.type === 'vFold' && m.mount === 'cut') {
+      occupied.push(addCutVFold(lines, gutterX, m));
     }
   }
 
@@ -191,9 +228,11 @@ export function buildCardPattern(
     }
   }
 
-  // V-folds are separate glued pieces: lay each patch out in a row below the
-  // card so it can be cut from the same sheet.
-  const vfolds = mechanisms.filter((m): m is VFoldMechanism => m.type === 'vFold');
+  // Glued V-folds are separate pieces: lay each patch out in a row below the
+  // card so it can be cut from the same sheet. (Cut V-folds live on the card.)
+  const vfolds = mechanisms.filter(
+    (m): m is VFoldMechanism => m.type === 'vFold' && m.mount === 'glued',
+  );
   let sheetWidth = width;
   let sheetHeight = height;
   if (vfolds.length > 0) {

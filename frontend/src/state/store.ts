@@ -38,10 +38,12 @@ function defaultVFold(card: CardParams): Mechanism {
   return {
     id: newId(),
     type: 'vFold',
+    mount: 'glued',
     centreMm: card.heightMm / 2,
     baseAngleDeg: 45,
     popupAngleDeg: 60,
     armMm: Math.min(50, card.heightMm * 0.3, card.panelWidthMm * 0.6),
+    spreadAngleDeg: 40,
     tabMm: 10,
   };
 }

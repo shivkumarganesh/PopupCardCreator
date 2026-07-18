@@ -14,7 +14,7 @@ export function Scene() {
   const openAngleDeg = useCardStore((s) => s.openAngleDeg);
   const card = useCardStore((s) => s.card);
   const mechanisms = useCardStore((s) => s.mechanisms);
-  const conflicts = useMemo(() => conflictingIds(mechanisms), [mechanisms]);
+  const conflicts = useMemo(() => conflictingIds(mechanisms, card), [mechanisms, card]);
 
   return (
     <Canvas camera={{ position: [12, 11, 18], fov: 40 }} shadows>

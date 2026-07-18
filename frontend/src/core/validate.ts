@@ -1,4 +1,4 @@
-import type { Mechanism } from './types';
+import type { CardParams, Mechanism } from './types';
 
 /**
  * Design-level validation across mechanisms.
@@ -27,8 +27,12 @@ function gutterSpan(m: Mechanism): [number, number] {
   if (m.type === 'parallelFold') {
     return [m.centreMm - m.spanMm / 2, m.centreMm + m.spanMm / 2];
   }
-  // V-fold: wings extend from the vertex toward the top; the sector [A, A+B]
-  // projects onto the gutter between arm·cos(A) and arm·cos(A+B).
+  if (m.mount === 'cut') {
+    // Cut beak: the triangular hollow runs from the apex to the slit.
+    return [m.centreMm, m.centreMm + m.armMm];
+  }
+  // Glued V-fold: wings extend from the vertex toward the top; the sector
+  // [A, A+B] projects onto the gutter between arm·cos(A) and arm·cos(A+B).
   const A = rad(m.baseAngleDeg);
   const AB = rad(m.baseAngleDeg + m.popupAngleDeg);
   const lo = m.centreMm - m.armMm * Math.cos(A);
@@ -37,7 +41,10 @@ function gutterSpan(m: Mechanism): [number, number] {
 }
 
 /** All conflicts among the mechanisms: overlaps and per-mechanism validity. */
-export function findConflicts(mechanisms: Mechanism[]): MechanismConflict[] {
+export function findConflicts(
+  mechanisms: Mechanism[],
+  card?: CardParams,
+): MechanismConflict[] {
   const conflicts: MechanismConflict[] = [];
 
   // Pairwise: no two mechanisms may occupy overlapping gutter footprints.
@@ -59,13 +66,26 @@ export function findConflicts(mechanisms: Mechanism[]): MechanismConflict[] {
     }
   }
 
-  // Per-mechanism: a V-fold needs popup angle ≥ base angle to open fully.
+  // Per-mechanism validity.
   for (const m of mechanisms) {
-    if (m.type === 'vFold' && m.popupAngleDeg < m.baseAngleDeg - EPS) {
-      conflicts.push({
-        ids: [m.id],
-        message: 'V-fold binds before fully open — popup angle must be ≥ base angle.',
-      });
+    if (m.type !== 'vFold') continue;
+    if (m.mount === 'glued') {
+      // Glued wings need popup angle ≥ base angle to open fully without tearing.
+      if (m.popupAngleDeg < m.baseAngleDeg - EPS) {
+        conflicts.push({
+          ids: [m.id],
+          message: 'V-fold binds before fully open — popup angle must be ≥ base angle.',
+        });
+      }
+    } else {
+      // Cut beak: the half-width must fit within a panel.
+      const halfWidth = m.armMm * Math.tan(rad(m.spreadAngleDeg));
+      if (card && halfWidth > card.panelWidthMm + EPS) {
+        conflicts.push({
+          ids: [m.id],
+          message: 'Beak is too wide for the card — reduce the spread or ridge length.',
+        });
+      }
     }
   }
 
@@ -73,18 +93,21 @@ export function findConflicts(mechanisms: Mechanism[]): MechanismConflict[] {
 }
 
 /** The set of mechanism ids involved in any conflict. */
-export function conflictingIds(mechanisms: Mechanism[]): Set<string> {
+export function conflictingIds(mechanisms: Mechanism[], card?: CardParams): Set<string> {
   const set = new Set<string>();
-  for (const c of findConflicts(mechanisms)) {
+  for (const c of findConflicts(mechanisms, card)) {
     for (const id of c.ids) set.add(id);
   }
   return set;
 }
 
 /** Map each conflicting mechanism id to its (first) conflict message. */
-export function conflictMessages(mechanisms: Mechanism[]): Map<string, string> {
+export function conflictMessages(
+  mechanisms: Mechanism[],
+  card?: CardParams,
+): Map<string, string> {
   const map = new Map<string, string>();
-  for (const c of findConflicts(mechanisms)) {
+  for (const c of findConflicts(mechanisms, card)) {
     for (const id of c.ids) {
       if (!map.has(id)) map.set(id, c.message);
     }

@@ -13,7 +13,7 @@ export function FlatPatternView() {
   const card = useCardStore((s) => s.card);
   const mechanisms = useCardStore((s) => s.mechanisms);
 
-  const conflicts = useMemo(() => findConflicts(mechanisms), [mechanisms]);
+  const conflicts = useMemo(() => findConflicts(mechanisms, card), [mechanisms, card]);
 
   // The exporter also validates laser geometry and throws on defects the
   // conflict check doesn't cover; surface either as a warning, never a crash.
