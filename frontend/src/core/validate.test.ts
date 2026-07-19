@@ -15,6 +15,7 @@ const vfold = (id: string, over: Partial<VFoldMechanism> = {}): VFoldMechanism =
   type: 'vFold',
   mount: 'glued',
   centreMm: 90,
+  flipped: false,
   symmetric: true,
   baseAngleDeg: 45,
   popupAngleDeg: 60,

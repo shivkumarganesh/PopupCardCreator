@@ -108,11 +108,18 @@ export function BaseCard({ openAngleDeg, card, mechanisms, worldPerMm }: BaseCar
         out.push({ z0, z1, depth0: depth, depth1: depth });
       } else if (m.type === 'vFold' && m.mount === 'cut') {
         // Triangular beak hollow: apex on the gutter (depth 0) widening to the
-        // slit end (depth d).
+        // slit end (depth d). The slit is on the flipped side when flipped.
         const d = Math.min(m.armMm * Math.tan((m.spreadAngleDeg * Math.PI) / 180) * W, panelWidth);
-        const zApex = zAt(m.centreMm); // larger z (upper)
-        const zSlit = zAt(m.centreMm + m.armMm); // smaller z (lower)
-        out.push({ z0: zSlit, z1: zApex, depth0: d, depth1: 0 });
+        const zApex = zAt(m.centreMm);
+        const zSlit = zAt(m.centreMm + (m.flipped ? -m.armMm : m.armMm));
+        // Assign depth d to the slit end and 0 to the apex, keeping z0 < z1.
+        const apexAtZ0 = zApex < zSlit;
+        out.push({
+          z0: Math.min(zApex, zSlit),
+          z1: Math.max(zApex, zSlit),
+          depth0: apexAtZ0 ? 0 : d,
+          depth1: apexAtZ0 ? d : 0,
+        });
       }
     }
     return out;

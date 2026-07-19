@@ -83,6 +83,8 @@ export interface VFoldMechanism {
   mount: 'glued' | 'cut';
   /** Vertex position from the top edge, along the gutter (mm). */
   centreMm: number;
+  /** Flip the fold along the gutter: it points toward the bottom instead of the top. */
+  flipped: boolean;
   /**
    * When true (glued mode), the right side mirrors the left; when false, the
    * right angles are independent (asymmetric V-fold).

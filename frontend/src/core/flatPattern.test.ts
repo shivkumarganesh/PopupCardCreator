@@ -16,6 +16,7 @@ const vfold = (id: string): VFoldMechanism => ({
   type: 'vFold',
   mount: 'glued',
   centreMm: 90,
+  flipped: false,
   symmetric: true,
   baseAngleDeg: 45,
   popupAngleDeg: 60,
@@ -80,6 +81,17 @@ describe('buildCardPattern', () => {
     // Gutter valley is split around the beak (2 segments) + 2 attachment creases.
     expect(p.lines.filter((l) => l.kind === 'valley').length).toBeGreaterThanOrEqual(4);
     expect(() => patternToSvg(p)).not.toThrow();
+  });
+
+  it('flips a cut beak to the other side of its apex', () => {
+    const apex = 90;
+    const arm = 50;
+    const down = { ...vfold('v1'), mount: 'cut' as const, centreMm: apex, armMm: arm };
+    const up = { ...down, flipped: true };
+    const slitY = (m: typeof down) =>
+      buildCardPattern(card, [m]).lines.find((l) => l.kind === 'cut' && !l.closed)!.points[0].y;
+    expect(slitY(down)).toBeCloseTo(apex + arm, 6); // slit below the apex
+    expect(slitY(up)).toBeCloseTo(apex - arm, 6); // flipped: slit above the apex
   });
 
   it('lays a V-fold patch out below the card, growing the sheet', () => {

@@ -149,7 +149,7 @@ function addCutVFold(
   m: VFoldMechanism,
 ): Interval {
   const yApex = m.centreMm;
-  const ySlit = m.centreMm + m.armMm;
+  const ySlit = m.centreMm + (m.flipped ? -m.armMm : m.armMm);
   const d = beakHalfWidth(m);
 
   lines.push({

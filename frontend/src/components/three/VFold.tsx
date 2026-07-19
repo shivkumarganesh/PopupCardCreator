@@ -24,10 +24,11 @@ function gluedGeometry(m: VFoldMechanism, card: CardParams, thetaDeg: number, W:
   if (!pose) return null;
 
   const arm = m.armMm * W;
+  const fz = m.flipped ? -1 : 1; // flip along the gutter
   const zV = (card.heightMm / 2 - m.centreMm) * W;
   const V = new THREE.Vector3(0, 0, zV);
   const along = (u: { x: number; y: number; z: number }) =>
-    new THREE.Vector3(u.x, u.y, u.z).multiplyScalar(arm).add(V);
+    new THREE.Vector3(u.x, u.y, u.z * fz).multiplyScalar(arm).add(V);
 
   const Pc = along(pose.central);
   const PaL = along(pose.attachLeft);
@@ -43,8 +44,9 @@ function cutGeometry(m: VFoldMechanism, card: CardParams, thetaDeg: number, W: n
   const pose = solveParallelFold({ p: d, q: d, a: d, b: d }, theta);
   if (!pose) return null;
 
+  const slitMm = m.centreMm + (m.flipped ? -m.armMm : m.armMm);
   const zApex = (card.heightMm / 2 - m.centreMm) * W;
-  const zSlit = (card.heightMm / 2 - (m.centreMm + m.armMm)) * W;
+  const zSlit = (card.heightMm / 2 - slitMm) * W;
   const apex = new THREE.Vector3(0, 0, zApex);
   const ridge = new THREE.Vector3(pose.B.x * W, pose.B.y * W, zSlit);
   const left = new THREE.Vector3(pose.A.x * W, pose.A.y * W, zSlit);
@@ -72,6 +74,7 @@ export function VFold({ mechanism, card, openAngleDeg, worldPerMm, conflict }: P
     return g;
   }, [
     mechanism.mount,
+    mechanism.flipped,
     mechanism.symmetric,
     mechanism.baseAngleDeg,
     mechanism.popupAngleDeg,

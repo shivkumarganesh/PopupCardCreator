@@ -29,14 +29,16 @@ function gutterSpan(m: Mechanism): [number, number] {
   if (m.type === 'parallelFold') {
     return [m.centreMm - m.spanMm / 2, m.centreMm + m.spanMm / 2];
   }
+  const fz = m.flipped ? -1 : 1;
   if (m.mount === 'cut') {
     // Cut beak: the triangular hollow runs from the apex to the slit.
-    return [m.centreMm, m.centreMm + m.armMm];
+    const slit = m.centreMm + fz * m.armMm;
+    return [Math.min(m.centreMm, slit), Math.max(m.centreMm, slit)];
   }
-  // Glued V-fold: wings extend from the vertex toward the top; each side's
+  // Glued V-fold: wings extend from the vertex along the gutter; each side's
   // sector [A, A+B] projects onto the gutter between arm·cos(A) and arm·cos(A+B).
   const { aL, bL, aR, bR } = vFoldSectorAngles(m);
-  const proj = [aL, aL + bL, aR, aR + bR].map((deg) => m.centreMm - m.armMm * Math.cos(rad(deg)));
+  const proj = [aL, aL + bL, aR, aR + bR].map((deg) => m.centreMm - fz * m.armMm * Math.cos(rad(deg)));
   return [Math.min(...proj), Math.max(...proj)];
 }
 
@@ -106,10 +108,11 @@ function gluedVFoldWarning(m: VFoldMechanism, card?: CardParams): string | null 
 
   if (card) {
     // Folded flat (θ = 0), each wing tip sits at angle A+B, distance arm.
+    const fz = m.flipped ? -1 : 1;
     const tipOutside = (sectorDeg: number) => {
       const t = rad(sectorDeg);
       const x = m.armMm * Math.sin(t); // across the gutter into the panel
-      const y = m.centreMm - m.armMm * Math.cos(t); // along the gutter
+      const y = m.centreMm - fz * m.armMm * Math.cos(t); // along the gutter
       return x > card.panelWidthMm + EPS || y < -EPS || y > card.heightMm + EPS;
     };
     if (tipOutside(aL + bL) || tipOutside(aR + bR)) {

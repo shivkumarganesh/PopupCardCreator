@@ -40,6 +40,7 @@ function defaultVFold(card: CardParams): Mechanism {
     type: 'vFold',
     mount: 'glued',
     centreMm: card.heightMm / 2,
+    flipped: false,
     symmetric: true,
     baseAngleDeg: 45,
     popupAngleDeg: 60,

@@ -119,6 +119,12 @@ function VFoldEditor({
           Glue (paste)
         </button>
       </div>
+      <button
+        className={`mech-flip-btn${m.flipped ? ' active' : ''}`}
+        onClick={() => update(m.id, { flipped: !m.flipped })}
+      >
+        ⇅ Flip {m.flipped ? '(pointing up)' : '(pointing down)'}
+      </button>
       <p className="mech-mount-hint">
         {m.mount === 'cut'
           ? 'Cut from the card — leaves a triangular hollow, no gluing.'
