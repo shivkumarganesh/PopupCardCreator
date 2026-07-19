@@ -83,10 +83,19 @@ export interface VFoldMechanism {
   mount: 'glued' | 'cut';
   /** Vertex position from the top edge, along the gutter (mm). */
   centreMm: number;
-  /** Base sector angle A: gutter → attachment crease (degrees). Glued mode. */
+  /**
+   * When true (glued mode), the right side mirrors the left; when false, the
+   * right angles are independent (asymmetric V-fold).
+   */
+  symmetric: boolean;
+  /** Left/symmetric base sector angle A_L: gutter → attachment crease (deg). */
   baseAngleDeg: number;
-  /** Popup sector angle B: attachment crease → central crease (degrees). Glued mode. */
+  /** Left/symmetric popup sector angle B_L: attachment → central crease (deg). */
   popupAngleDeg: number;
+  /** Right base sector angle A_R (asymmetric glued mode). */
+  baseAngleRightDeg: number;
+  /** Right popup sector angle B_R (asymmetric glued mode). */
+  popupAngleRightDeg: number;
   /**
    * Glued mode: length of the creases from the vertex (mm).
    * Cut mode: length of the beak's ridge along the gutter (mm).
@@ -99,6 +108,22 @@ export interface VFoldMechanism {
 }
 
 export type Mechanism = ParallelFoldMechanism | VFoldMechanism;
+
+/** The four sector angles (degrees) of a V-fold, mirroring the left side when
+ * symmetric. */
+export function vFoldSectorAngles(m: VFoldMechanism): {
+  aL: number;
+  bL: number;
+  aR: number;
+  bR: number;
+} {
+  return {
+    aL: m.baseAngleDeg,
+    bL: m.popupAngleDeg,
+    aR: m.symmetric ? m.baseAngleDeg : m.baseAngleRightDeg,
+    bR: m.symmetric ? m.popupAngleDeg : m.popupAngleRightDeg,
+  };
+}
 
 /** Laser color conventions (xTool XCS maps operations by stroke color). */
 export const LASER_COLORS: Record<LineKind, string> = {

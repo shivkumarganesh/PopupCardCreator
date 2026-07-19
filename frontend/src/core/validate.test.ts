@@ -15,8 +15,11 @@ const vfold = (id: string, over: Partial<VFoldMechanism> = {}): VFoldMechanism =
   type: 'vFold',
   mount: 'glued',
   centreMm: 90,
+  symmetric: true,
   baseAngleDeg: 45,
   popupAngleDeg: 60,
+  baseAngleRightDeg: 45,
+  popupAngleRightDeg: 60,
   armMm: 50,
   spreadAngleDeg: 40,
   tabMm: 10,
@@ -68,6 +71,39 @@ describe('findConflicts', () => {
     expect(findConflicts([bad])).toHaveLength(1);
     // A valid V-fold (B ≥ A) is fine.
     expect(findConflicts([vfold('v', { popupAngleDeg: 70 })])).toHaveLength(0);
+  });
+
+  it('flags an asymmetric V-fold that won’t close flat (Kawasaki)', () => {
+    // A_L+B_L = 45+60 = 105; A_R+B_R = 50+50 = 100 → not flat-foldable.
+    const bad = vfold('v', {
+      symmetric: false,
+      baseAngleDeg: 45,
+      popupAngleDeg: 60,
+      baseAngleRightDeg: 50,
+      popupAngleRightDeg: 50,
+    });
+    const msgs = conflictingIds([bad]);
+    expect(msgs.has('v')).toBe(true);
+    // A matched asymmetric pair (both sum to 105) is fine.
+    const ok = vfold('v', {
+      symmetric: false,
+      baseAngleDeg: 40,
+      popupAngleDeg: 65,
+      baseAngleRightDeg: 50,
+      popupAngleRightDeg: 55,
+    });
+    expect(findConflicts([ok])).toHaveLength(0);
+  });
+
+  it('flags a V-fold whose wing extends past the card edge when closed', () => {
+    const card = { panelWidthMm: 130, heightMm: 180 };
+    // arm·sin(A+B) = 120·sin(105°) ≈ 116 < 130 across, but tip along the gutter
+    // y = 20 − 120·cos(105°) ≈ 51 is fine; push the arm long enough to exceed.
+    const big = vfold('v', { centreMm: 20, armMm: 200 });
+    expect(findConflicts([big], card).some((c) => c.ids.includes('v'))).toBe(true);
+    // A modest arm stays inside.
+    const small = vfold('v', { centreMm: 90, armMm: 40 });
+    expect(findConflicts([small], card)).toHaveLength(0);
   });
 
   it('flags a cut beak that is too wide for the card', () => {

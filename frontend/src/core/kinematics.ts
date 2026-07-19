@@ -216,6 +216,76 @@ export function vFoldApexHeight(pose: VFoldPose, len: number): number {
   return len * pose.central.y;
 }
 
+// --- Vector helpers (local, for the asymmetric solve) ----------------------
+const dot = (a: Vec3, b: Vec3) => a.x * b.x + a.y * b.y + a.z * b.z;
+const cross = (a: Vec3, b: Vec3): Vec3 => ({
+  x: a.y * b.z - a.z * b.y,
+  y: a.z * b.x - a.x * b.z,
+  z: a.x * b.y - a.y * b.x,
+});
+const scale = (a: Vec3, s: number): Vec3 => ({ x: a.x * s, y: a.y * s, z: a.z * s });
+const add = (a: Vec3, b: Vec3): Vec3 => ({ x: a.x + b.x, y: a.y + b.y, z: a.z + b.z });
+
+export interface VFoldAsymParams {
+  /** Base sector angle on the left, gutter → attachment crease (rad). */
+  aL: number;
+  /** Popup sector angle on the left, attachment → central crease (rad). */
+  bL: number;
+  aR: number;
+  bR: number;
+  branch?: 'up' | 'down';
+}
+
+/**
+ * Solve the general (asymmetric) V-fold at opening angle θ by intersecting the
+ * two rigid-panel constraints with the unit sphere:
+ *
+ *   u_L · c = cos B_L,   u_R · c = cos B_R,   |c| = 1
+ *
+ * where u_L, u_R are the attachment-crease directions in the two base panels.
+ * The two roots are the up/down branches. Returns null when the constraints
+ * have no common unit solution — the four-bar binds (paper tears) at this θ —
+ * or when the panels degenerate (θ ≈ 0, panels coincident).
+ */
+export function solveVFoldAsym(p: VFoldAsymParams, thetaRad: number): VFoldPose | null {
+  const { aL, bL, aR, bR, branch = 'up' } = p;
+  const sh = Math.sin(thetaRad / 2);
+  const ch = Math.cos(thetaRad / 2);
+
+  const uL: Vec3 = { x: -Math.sin(aL) * sh, y: Math.sin(aL) * ch, z: Math.cos(aL) };
+  const uR: Vec3 = { x: Math.sin(aR) * sh, y: Math.sin(aR) * ch, z: Math.cos(aR) };
+
+  const m = dot(uL, uR);
+  const denom = 1 - m * m;
+  if (denom < 1e-9) return null; // attachment creases parallel (θ ≈ 0)
+
+  const cbL = Math.cos(bL);
+  const cbR = Math.cos(bR);
+  const a = (cbL - m * cbR) / denom;
+  const b = (cbR - m * cbL) / denom;
+  const c0 = add(scale(uL, a), scale(uR, b));
+  const d = cross(uL, uR);
+  const dd = dot(d, d);
+  if (dd < 1e-12) return null;
+
+  const disc = (1 - dot(c0, c0)) / dd;
+  if (disc < 0) return null; // no closure → binds/tears
+
+  const t = Math.sqrt(disc);
+  const cUp = add(c0, scale(d, t));
+  const cDown = add(c0, scale(d, -t));
+  // 'up' = the erect branch (central crease rising, larger y).
+  const rising = cUp.y >= cDown.y ? cUp : cDown;
+  const central = branch === 'up' ? rising : rising === cUp ? cDown : cUp;
+
+  return {
+    delta: Math.atan2(Math.hypot(central.x, central.y), central.z),
+    central,
+    attachLeft: uL,
+    attachRight: uR,
+  };
+}
+
 /**
  * True when the symmetric V-fold reaches θ without binding.
  * Opening fully (θ = π) requires cos B ≤ cos A, i.e. B ≥ A.

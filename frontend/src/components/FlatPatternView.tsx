@@ -49,7 +49,7 @@ export function FlatPatternView() {
       {conflicts.length > 0 && (
         <div className="flat-pattern-error">
           ⚠ {conflicts[0].message}
-          <span>Move or resize the highlighted step folds so they don’t overlap.</span>
+          <span>Export is disabled until the highlighted mechanism is fixed.</span>
         </div>
       )}
       {error ? (

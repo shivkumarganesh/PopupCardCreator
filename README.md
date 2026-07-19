@@ -69,10 +69,13 @@ Implemented mechanisms:
 - **Step/box fold** — cut from the card; windows the panels where the strip lifts.
 - **V-fold** — two mounting methods, toggled per fold:
   - *Glue*: a self-supporting patch (wings joined at a ridge off the gutter),
-    cut as a separate piece below the card and pasted on — no hollow.
+    cut as a separate piece below the card and pasted on — no hollow. Supports
+    **asymmetric** left/right sector angles via the full spherical four-bar
+    solve (`solveVFoldAsym`).
   - *Cut*: a triangular "beak" cut from the card itself (the gutter reverses to
     a mountain ridge), leaving a triangular hollow — no gluing.
 
-Overlapping mechanisms and invalid configurations (glued V-fold with popup
-angle < base angle; cut beak too wide for the card) are detected and block
-export.
+Live constraint checks block export on invalid designs: overlapping
+mechanisms; a glued V-fold that would **tear** (a side with popup < base
+angle), **won't close flat** (Kawasaki: A_L+B_L ≠ A_R+B_R), or **protrudes**
+past the card edge when closed; and a cut beak too wide for the card.

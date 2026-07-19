@@ -152,8 +152,16 @@ function VFoldEditor({
         </>
       ) : (
         <>
+          <label className="mech-checkbox">
+            <input
+              type="checkbox"
+              checked={m.symmetric}
+              onChange={(e) => update(m.id, { symmetric: e.target.checked })}
+            />
+            Symmetric (mirror both sides)
+          </label>
           <Slider
-            label="Base angle"
+            label={m.symmetric ? 'Base angle' : 'Base angle (left)'}
             value={m.baseAngleDeg}
             min={10}
             max={80}
@@ -161,13 +169,33 @@ function VFoldEditor({
             onChange={(v) => update(m.id, { baseAngleDeg: v })}
           />
           <Slider
-            label="Popup angle"
+            label={m.symmetric ? 'Popup angle' : 'Popup angle (left)'}
             value={m.popupAngleDeg}
             min={10}
             max={85}
             unit="°"
             onChange={(v) => update(m.id, { popupAngleDeg: v })}
           />
+          {!m.symmetric && (
+            <>
+              <Slider
+                label="Base angle (right)"
+                value={m.baseAngleRightDeg}
+                min={10}
+                max={80}
+                unit="°"
+                onChange={(v) => update(m.id, { baseAngleRightDeg: v })}
+              />
+              <Slider
+                label="Popup angle (right)"
+                value={m.popupAngleRightDeg}
+                min={10}
+                max={85}
+                unit="°"
+                onChange={(v) => update(m.id, { popupAngleRightDeg: v })}
+              />
+            </>
+          )}
           <Slider
             label="Arm length"
             value={m.armMm}

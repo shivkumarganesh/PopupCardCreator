@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import * as THREE from 'three';
-import { solveParallelFold, solveVFold } from '../../core/kinematics';
+import { solveParallelFold, solveVFoldAsym } from '../../core/kinematics';
 import { beakHalfWidth } from '../../core/flatPattern';
+import { vFoldSectorAngles } from '../../core/types';
 import type { CardParams, VFoldMechanism } from '../../core/types';
 
 interface Props {
@@ -17,9 +18,9 @@ interface Props {
  * rises off the gutter (spherical four-bar). */
 function gluedGeometry(m: VFoldMechanism, card: CardParams, thetaDeg: number, W: number) {
   const theta = THREE.MathUtils.degToRad(thetaDeg);
-  const A = THREE.MathUtils.degToRad(m.baseAngleDeg);
-  const B = THREE.MathUtils.degToRad(m.popupAngleDeg);
-  const pose = solveVFold({ A, B }, theta);
+  const s = vFoldSectorAngles(m);
+  const r = THREE.MathUtils.degToRad;
+  const pose = solveVFoldAsym({ aL: r(s.aL), bL: r(s.bL), aR: r(s.aR), bR: r(s.bR) }, theta);
   if (!pose) return null;
 
   const arm = m.armMm * W;
@@ -71,8 +72,11 @@ export function VFold({ mechanism, card, openAngleDeg, worldPerMm, conflict }: P
     return g;
   }, [
     mechanism.mount,
+    mechanism.symmetric,
     mechanism.baseAngleDeg,
     mechanism.popupAngleDeg,
+    mechanism.baseAngleRightDeg,
+    mechanism.popupAngleRightDeg,
     mechanism.spreadAngleDeg,
     mechanism.armMm,
     mechanism.centreMm,

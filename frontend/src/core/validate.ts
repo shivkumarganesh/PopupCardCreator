@@ -1,4 +1,6 @@
-import type { CardParams, Mechanism } from './types';
+import { solveVFoldAsym } from './kinematics';
+import type { CardParams, Mechanism, VFoldMechanism } from './types';
+import { vFoldSectorAngles } from './types';
 
 /**
  * Design-level validation across mechanisms.
@@ -31,13 +33,11 @@ function gutterSpan(m: Mechanism): [number, number] {
     // Cut beak: the triangular hollow runs from the apex to the slit.
     return [m.centreMm, m.centreMm + m.armMm];
   }
-  // Glued V-fold: wings extend from the vertex toward the top; the sector
-  // [A, A+B] projects onto the gutter between arm·cos(A) and arm·cos(A+B).
-  const A = rad(m.baseAngleDeg);
-  const AB = rad(m.baseAngleDeg + m.popupAngleDeg);
-  const lo = m.centreMm - m.armMm * Math.cos(A);
-  const hi = m.centreMm - m.armMm * Math.cos(AB);
-  return [Math.min(lo, hi), Math.max(lo, hi)];
+  // Glued V-fold: wings extend from the vertex toward the top; each side's
+  // sector [A, A+B] projects onto the gutter between arm·cos(A) and arm·cos(A+B).
+  const { aL, bL, aR, bR } = vFoldSectorAngles(m);
+  const proj = [aL, aL + bL, aR, aR + bR].map((deg) => m.centreMm - m.armMm * Math.cos(rad(deg)));
+  return [Math.min(...proj), Math.max(...proj)];
 }
 
 /** All conflicts among the mechanisms: overlaps and per-mechanism validity. */
@@ -70,13 +70,8 @@ export function findConflicts(
   for (const m of mechanisms) {
     if (m.type !== 'vFold') continue;
     if (m.mount === 'glued') {
-      // Glued wings need popup angle ≥ base angle to open fully without tearing.
-      if (m.popupAngleDeg < m.baseAngleDeg - EPS) {
-        conflicts.push({
-          ids: [m.id],
-          message: 'V-fold binds before fully open — popup angle must be ≥ base angle.',
-        });
-      }
+      const msg = gluedVFoldWarning(m, card);
+      if (msg) conflicts.push({ ids: [m.id], message: msg });
     } else {
       // Cut beak: the half-width must fit within a panel.
       const halfWidth = m.armMm * Math.tan(rad(m.spreadAngleDeg));
@@ -90,6 +85,39 @@ export function findConflicts(
   }
 
   return conflicts;
+}
+
+/**
+ * The first constraint a glued V-fold violates, or null if it is valid:
+ *  - tear: the spherical four-bar has no closure at 180° (a side has B < A);
+ *  - Kawasaki: A_L + B_L ≠ A_R + B_R, so the card can't close flat;
+ *  - containment: a wing tip lands outside the card when folded flat.
+ */
+function gluedVFoldWarning(m: VFoldMechanism, card?: CardParams): string | null {
+  const { aL, bL, aR, bR } = vFoldSectorAngles(m);
+
+  if (!solveVFoldAsym({ aL: rad(aL), bL: rad(bL), aR: rad(aR), bR: rad(bR) }, Math.PI)) {
+    return 'V-fold binds before fully open — each popup angle must be ≥ its base angle.';
+  }
+
+  if (Math.abs(aL + bL - (aR + bR)) > 0.5) {
+    return 'V-fold won’t close flat — left and right (base + popup) angles must match.';
+  }
+
+  if (card) {
+    // Folded flat (θ = 0), each wing tip sits at angle A+B, distance arm.
+    const tipOutside = (sectorDeg: number) => {
+      const t = rad(sectorDeg);
+      const x = m.armMm * Math.sin(t); // across the gutter into the panel
+      const y = m.centreMm - m.armMm * Math.cos(t); // along the gutter
+      return x > card.panelWidthMm + EPS || y < -EPS || y > card.heightMm + EPS;
+    };
+    if (tipOutside(aL + bL) || tipOutside(aR + bR)) {
+      return 'V-fold extends past the card edge when closed — shorten the arm.';
+    }
+  }
+
+  return null;
 }
 
 /** The set of mechanism ids involved in any conflict. */

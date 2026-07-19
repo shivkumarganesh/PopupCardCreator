@@ -1,5 +1,5 @@
 import type { CardParams, FlatPattern, Mechanism, PatternLine, Point2, VFoldMechanism } from './types';
-import { SCORE_INSET_MM } from './types';
+import { SCORE_INSET_MM, vFoldSectorAngles } from './types';
 
 type Interval = [number, number];
 
@@ -86,18 +86,23 @@ interface PatchGeom {
  */
 function vFoldPatchLocal(m: VFoldMechanism): PatchGeom {
   const h = m.armMm;
-  const B = (m.popupAngleDeg * Math.PI) / 180;
   const tabW = m.tabMm;
-  const sB = Math.sin(B);
-  const cB = Math.cos(B);
+  const { bL, bR } = vFoldSectorAngles(m);
+  const BL = (bL * Math.PI) / 180;
+  const BR = (bR * Math.PI) / 180;
+  const sBL = Math.sin(BL);
+  const cBL = Math.cos(BL);
+  const sBR = Math.sin(BR);
+  const cBR = Math.cos(BR);
 
   const V: Point2 = { x: 0, y: 0 };
   const Pc: Point2 = { x: 0, y: h }; // top of central crease
-  const PaR: Point2 = { x: h * sB, y: h * cB };
-  const PaL: Point2 = { x: -h * sB, y: h * cB };
+  // Left wing opens by B_L, right wing by B_R (asymmetric patch).
+  const PaR: Point2 = { x: h * sBR, y: h * cBR };
+  const PaL: Point2 = { x: -h * sBL, y: h * cBL };
   // Outward normals of the attachment creases (away from the central crease).
-  const nR: Point2 = { x: cB, y: -sB };
-  const nL: Point2 = { x: -cB, y: -sB };
+  const nR: Point2 = { x: cBR, y: -sBR };
+  const nL: Point2 = { x: -cBL, y: -sBL };
   const PaRt: Point2 = { x: PaR.x + tabW * nR.x, y: PaR.y + tabW * nR.y };
   const Vrt: Point2 = { x: V.x + tabW * nR.x, y: V.y + tabW * nR.y };
   const PaLt: Point2 = { x: PaL.x + tabW * nL.x, y: PaL.y + tabW * nL.y };

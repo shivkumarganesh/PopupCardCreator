@@ -6,6 +6,7 @@ import {
   parallelFoldOpensTo,
   solveParallelFold,
   solveVFold,
+  solveVFoldAsym,
   vFoldApexHeight,
   vFoldClosedPosition,
   vFoldFoldsFlat,
@@ -142,6 +143,43 @@ describe('solveVFold', () => {
     const r = panelDirection(theta, 'right');
     expect(pose.attachRight.x).toBeCloseTo(Math.sin(deg(30)) * r.x, 9);
     expect(pose.attachRight.y).toBeCloseTo(Math.sin(deg(30)) * r.y, 9);
+  });
+});
+
+describe('solveVFoldAsym', () => {
+  it('matches the symmetric solver when both sides are equal', () => {
+    const A = deg(45);
+    const B = deg(65);
+    for (const theta of [deg(30), deg(90), deg(160)]) {
+      const sym = solveVFold({ A, B }, theta)!;
+      const asym = solveVFoldAsym({ aL: A, bL: B, aR: A, bR: B }, theta)!;
+      expect(asym.central.x).toBeCloseTo(sym.central.x, 6);
+      expect(asym.central.y).toBeCloseTo(sym.central.y, 6);
+      expect(asym.central.z).toBeCloseTo(sym.central.z, 6);
+    }
+  });
+
+  it('satisfies both rigid-panel constraints for asymmetric angles', () => {
+    const params = { aL: deg(40), bL: deg(70), aR: deg(55), bR: deg(55) };
+    for (const theta of [deg(40), deg(110), deg(175)]) {
+      const pose = solveVFoldAsym(params, theta)!;
+      const dotL =
+        pose.attachLeft.x * pose.central.x +
+        pose.attachLeft.y * pose.central.y +
+        pose.attachLeft.z * pose.central.z;
+      const dotR =
+        pose.attachRight.x * pose.central.x +
+        pose.attachRight.y * pose.central.y +
+        pose.attachRight.z * pose.central.z;
+      expect(dotL).toBeCloseTo(Math.cos(params.bL), 6);
+      expect(dotR).toBeCloseTo(Math.cos(params.bR), 6);
+    }
+  });
+
+  it('binds before 180° when a side has B < A (tear condition)', () => {
+    const params = { aL: deg(60), bL: deg(45), aR: deg(45), bR: deg(60) };
+    expect(solveVFoldAsym(params, deg(90))).not.toBeNull();
+    expect(solveVFoldAsym(params, Math.PI)).toBeNull();
   });
 });
 
