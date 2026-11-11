@@ -1,144 +1,154 @@
 /**
  * Core domain types for the Pop-Up Card Creator.
  *
- * Everything in this module is expressed in millimetres (laser-native units)
- * and is deliberately free of three.js / React dependencies: the same data
- * drives both the 3D visualizer and the 2D SVG flat-pattern engine.
+ * COORDINATE SYSTEMS (the one place they are documented)
+ *
+ *  Outline space  — a shape's own silhouette. Unitless, y UP, the shape stands
+ *                   on y = 0, height is exactly 1, x runs 0 … aspect.
+ *  Flat space     — the unfolded card sheet, millimetres, y UP. x runs 0 … W
+ *                   along the centre fold. The centre fold (gutter) is y = 0;
+ *                   the FLOOR panel is y ∈ [-P, 0], the BACK WALL is y ∈ [0, P].
+ *                   This is the geometry IR: the 2D editor, the 3D preview and
+ *                   the exported file are all derived from it.
+ *  Export space   — flat space mirrored to y DOWN (SVG), millimetres, 1:1.
+ *  3D space       — millimetres, y up. The gutter lies on the x axis, the floor
+ *                   panel lies in the ground plane toward +z (the viewer), the
+ *                   back wall rotates up about the gutter (see pose.ts).
+ *
+ * Nothing in src/core touches the DOM or three.js.
  */
 
-/** A 2D point in flat-pattern space, millimetres. Origin = top-left of the sheet. */
-export interface Point2 {
-  x: number;
-  y: number;
+export type Pt = [number, number];
+/** A ring WITHOUT a repeated closing point. */
+export type Ring = Pt[];
+/** [outer, ...holes] */
+export type Poly = Ring[];
+export type MultiPoly = Poly[];
+
+export interface CardSpec {
+  /** Card width along the centre fold (mm). */
+  widthMm: number;
+  /** Depth of ONE panel, centre fold → outer edge (mm). */
+  panelMm: number;
+  /** Paper colour of the pop-up sheet. */
+  color: string;
+  /** Add a slightly larger backing cover that shows through the cut-outs. */
+  backing: boolean;
+  backingColor: string;
 }
 
-/** How the laser must treat a line, and how the 3D sim must fold it. */
-export type LineKind = 'cut' | 'mountain' | 'valley';
+/**
+ * How an element is made:
+ *  - 'fused': cut from the card sheet itself. Its silhouette folds up out of
+ *    the card and a strut cut from the same sheet holds it — no glue.
+ *  - 'glued': a separate piece (any paper colour) glued to the front of a small
+ *    box tab cut from the card. Pieces can overlap each other in depth.
+ */
+export type BuildMode = 'fused' | 'glued';
 
-/** An open polyline (fold/score) or closed polygon (cut) in the flat pattern. */
+export interface PopElement {
+  id: string;
+  name: string;
+  /** Silhouette in outline space. */
+  outline: MultiPoly;
+  /** Outline width / height. */
+  aspect: number;
+  /** Centre of the element along the card width (mm). */
+  xMm: number;
+  /** How far in front of the back wall it stands (mm). */
+  depthMm: number;
+  /** Standing height (mm). Width follows from the aspect ratio. */
+  heightMm: number;
+  mode: BuildMode;
+  /** Where the support strut sits across the element, -1 (left) … 1 (right). */
+  supportOffset: number;
+  supportWidthMm: number;
+  /** Paper colour of a glued piece. */
+  color: string;
+}
+
+export interface Design {
+  card: CardSpec;
+  elements: PopElement[];
+}
+
+/** How a line is produced: cut through, or scored and folded. */
+export type LineKind = 'cut' | 'valley' | 'mountain';
+
 export interface PatternLine {
   kind: LineKind;
-  points: Point2[];
-  /** Closed paths get a `Z`; required true for every `cut` boundary. */
+  points: Pt[];
   closed: boolean;
+  /** Element that owns the line (undefined for the card outline / gutter). */
+  elementId?: string;
 }
 
-/** The complete 2D flat pattern of a card design. */
-export interface FlatPattern {
-  widthMm: number;
-  heightMm: number;
+/**
+ * A rigid piece of paper in flat space plus the hinge data that places it in
+ * 3D at any opening angle (see pose.ts).
+ */
+export type PartRole = 'floor' | 'wall' | 'front' | 'bridge' | 'piece' | 'backFloor' | 'backWall';
+
+export interface Part {
+  role: PartRole;
+  elementId?: string;
+  region: MultiPoly;
+  color: string;
+  /** Element depth d (front / bridge / piece). */
+  depth: number;
+  /** Height above the floor at which the strut leaves the front face. */
+  strut: number;
+  /** Stacking layer: -1 backing, 0 card sheet, 1 glued piece. */
+  layer: number;
+}
+
+/** A separately cut, glued-on piece, in flat space at its "lying down" position. */
+export interface LoosePiece {
+  elementId: string;
+  name: string;
+  color: string;
+  region: MultiPoly;
+}
+
+export interface Issue {
+  severity: 'error' | 'warning';
+  elementId?: string;
+  message: string;
+  /** What the user can do about it. */
+  fix: string;
+}
+
+export interface CardModel {
+  card: CardSpec;
+  parts: Part[];
+  /** Cut and fold lines of the card sheet, flat space. */
   lines: PatternLine[];
+  pieces: LoosePiece[];
+  issues: Issue[];
+  /** Flat-space footprint per element, for hit-testing and selection. */
+  footprints: Record<string, { region: MultiPoly; bbox: BBox; support: BBox }>;
 }
 
-/** Parameters of the base card (two panels joined at the gutter). */
-export interface CardParams {
-  /** Width of ONE panel, gutter to outer edge, in mm. */
-  panelWidthMm: number;
-  /** Card height (along the gutter), in mm. */
-  heightMm: number;
+export interface BBox {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
 }
 
-/**
- * A symmetric single-slit box/step fold cut directly from the base card.
- *
- * Two slits run perpendicular to the gutter; the freed strip between them
- * reverses its gutter crease (mountain instead of the card's valley) and
- * rises as a peak when the card opens. Cut-from-sheet, so it needs no glue
- * and flattens back into its own slot at 180°.
- */
-export interface ParallelFoldMechanism {
-  id: string;
-  type: 'parallelFold';
-  /** Distance from the top edge to the strip centre, along the gutter (mm). */
-  centreMm: number;
-  /** Strip width measured along the gutter (mm). */
-  spanMm: number;
-  /**
-   * Crease depth from the gutter to each base crease (mm). Also the pop
-   * projection: the peak reaches height 2·depth·cos(θ/2) above the gutter.
-   */
-  depthMm: number;
-}
+/** Clearances and limits (mm). */
+export const LIMITS = {
+  /** Keep-out margin from the card edge. */
+  edge: 3,
+  /** Smallest gap between two neighbouring tabs. */
+  gap: 2,
+  minDepth: 6,
+  minHeight: 10,
+  minSupport: 4,
+  /** How much larger the backing cover is on every side. */
+  backingMargin: 3,
+  paperMm: 0.3,
+} as const;
 
-/**
- * A symmetric V-fold (angle fold): a glued patch, not cut from the card.
- *
- * Two wings meet at a central mountain crease rising from a vertex on the
- * gutter; each wing folds down to an attachment crease on a base panel where
- * a glue tab holds it. Modelled as a spherical four-bar (see `solveVFold`):
- * the popup sector angle B must be ≥ the base sector angle A for the fold to
- * open fully to 180° without tearing.
- */
-export interface VFoldMechanism {
-  id: string;
-  type: 'vFold';
-  /**
-   * How the V-fold is realised:
-   *  - 'glued': a separate patch cut elsewhere on the sheet, folded and pasted
-   *    onto the card. Self-supporting (wings joined at a mountain ridge off the
-   *    gutter), no hollow in the card.
-   *  - 'cut': a triangular beak cut from the card itself (the gutter reverses
-   *    to a mountain ridge), leaving a triangular hollow. No gluing.
-   */
-  mount: 'glued' | 'cut';
-  /** Vertex position from the top edge, along the gutter (mm). */
-  centreMm: number;
-  /** Flip the fold along the gutter: it points toward the bottom instead of the top. */
-  flipped: boolean;
-  /**
-   * When true (glued mode), the right side mirrors the left; when false, the
-   * right angles are independent (asymmetric V-fold).
-   */
-  symmetric: boolean;
-  /** Left/symmetric base sector angle A_L: gutter → attachment crease (deg). */
-  baseAngleDeg: number;
-  /** Left/symmetric popup sector angle B_L: attachment → central crease (deg). */
-  popupAngleDeg: number;
-  /** Right base sector angle A_R (asymmetric glued mode). */
-  baseAngleRightDeg: number;
-  /** Right popup sector angle B_R (asymmetric glued mode). */
-  popupAngleRightDeg: number;
-  /**
-   * Glued mode: length of the creases from the vertex (mm).
-   * Cut mode: length of the beak's ridge along the gutter (mm).
-   */
-  armMm: number;
-  /** Half-spread angle of the beak at the apex (degrees). Cut mode. */
-  spreadAngleDeg: number;
-  /** Glue-tab width along each attachment crease (mm). Glued mode. */
-  tabMm: number;
-}
-
-export type Mechanism = ParallelFoldMechanism | VFoldMechanism;
-
-/** The four sector angles (degrees) of a V-fold, mirroring the left side when
- * symmetric. */
-export function vFoldSectorAngles(m: VFoldMechanism): {
-  aL: number;
-  bL: number;
-  aR: number;
-  bR: number;
-} {
-  return {
-    aL: m.baseAngleDeg,
-    bL: m.popupAngleDeg,
-    aR: m.symmetric ? m.baseAngleDeg : m.baseAngleRightDeg,
-    bR: m.symmetric ? m.popupAngleDeg : m.popupAngleRightDeg,
-  };
-}
-
-/** Laser color conventions (xTool XCS maps operations by stroke color). */
-export const LASER_COLORS: Record<LineKind, string> = {
-  cut: '#FF0000',
-  mountain: '#0000FF',
-  valley: '#00FF00',
-};
-
-/** Hairline stroke width in mm for all laser vectors. */
-export const LASER_STROKE_MM = 0.1;
-
-/**
- * Fold/score lines are shortened by this much where they would meet a cut
- * edge, so the score never over-weakens a corner that the cut releases.
- */
-export const SCORE_INSET_MM = 0.5;
+/** Atomm / xTool processing colours: red stroke = cut, blue stroke = score. */
+export const LASER = { cut: '#FE0002', score: '#2366FF', strokeMm: 0.1 } as const;
