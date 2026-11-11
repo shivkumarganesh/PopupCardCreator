@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useStore } from './app/store';
-import { TEMPLATES } from './app/templates';
+import { TEMPLATES, loadTemplate } from './app/templates';
 import { Canvas } from './components/Canvas';
 import { LeadRail } from './components/LeadRail';
 import { ParamsRail } from './components/ParamsRail';
@@ -19,7 +19,7 @@ export default function App() {
       /* storage unavailable */
     }
     if (fresh && useStore.getState().design.elements.length === 0) {
-      useStore.setState({ design: TEMPLATES[0].build() });
+      useStore.setState({ design: loadTemplate(TEMPLATES.find((t) => t.id === 'birthday')!) });
     }
   }, []);
 

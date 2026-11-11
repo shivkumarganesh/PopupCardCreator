@@ -39,14 +39,19 @@ export function resolveSupports(design: Design): Design {
     // try the elements nearest the viewer first: they have the longest tabs and the most freedom
     const order = [...d.elements].sort((a, b) => b.depthMm - a.depthMm);
     for (const el of order) {
-      for (const off of OFFSETS) {
-        if (off === el.supportOffset) continue;
-        const cand = { ...d, elements: d.elements.map((e) => (e.id === el.id ? { ...e, supportOffset: off } : e)) };
-        const k = errorCount(cand);
-        if (k < bestN) {
-          best = cand;
-          bestN = k;
+      // a low tab is the second resort: it keeps the piece but changes how it is held
+      const tabs = el.mode === 'glued' && !el.lowTab ? [false, true] : [!!el.lowTab];
+      for (const lowTab of tabs) {
+        for (const off of OFFSETS) {
+          if (off === el.supportOffset && lowTab === !!el.lowTab) continue;
+          const cand = { ...d, elements: d.elements.map((e) => (e.id === el.id ? { ...e, supportOffset: off, lowTab } : e)) };
+          const k = errorCount(cand);
+          if (k < bestN) {
+            best = cand;
+            bestN = k;
+          }
         }
+        if (bestN < n) break;
       }
       if (bestN < n) break;
     }

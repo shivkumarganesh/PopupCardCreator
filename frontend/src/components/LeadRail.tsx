@@ -4,7 +4,7 @@ import type { Traced } from '../core/trace';
 import { SHAPES } from '../app/shapes';
 import { FONTS, traceCanvas, traceImage, traceShape, traceText } from '../app/sources';
 import { useStore } from '../app/store';
-import { TEMPLATES, blankDesign } from '../app/templates';
+import { TEMPLATES, loadTemplate } from '../app/templates';
 import type { Design } from '../core/types';
 import { elementWidth } from '../core/build';
 import { ICONS, Icon, SelectRow, SliderRow, SwitchRow, toast } from './ui';
@@ -65,8 +65,8 @@ function TemplatesPanel() {
             type="button"
             className="thumb"
             onClick={() => {
-              load(t.build());
-              toast(`Loaded “${t.name}” — everything in it can be moved, resized or replaced`);
+              load(loadTemplate(t));
+              if (t.id !== 'blank') toast(`Loaded “${t.name}” — everything in it can be moved, resized or replaced`);
             }}
           >
             <span className="thumb-card">
@@ -75,12 +75,6 @@ function TemplatesPanel() {
             <span className="thumb-label">{t.name}</span>
           </button>
         ))}
-        <button type="button" className="thumb" onClick={() => load(blankDesign())}>
-          <span className="thumb-card">
-            <ScenePreview design={blankDesign()} />
-          </span>
-          <span className="thumb-label">Blank card</span>
-        </button>
       </div>
       <p className="field-note">Pick a scene to start from, then swap in your own shapes, words and pictures.</p>
     </div>
