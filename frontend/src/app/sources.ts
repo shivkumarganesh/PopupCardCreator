@@ -26,8 +26,8 @@ const cache = new Map<string, Traced>();
 export function traceShape(shape: LibraryShape): Traced {
   const hit = cache.get(shape.id);
   if (hit) return hit;
-  const S = 4; // 400 px for the 100-unit box
-  const c = makeCanvas(100 * S + 8, 100 * S + 8);
+  const S = 4; // 400 px for the default 100-unit box
+  const c = makeCanvas((shape.w ?? 100) * S + 8, (shape.h ?? 100) * S + 8);
   const ctx = c.getContext('2d')!;
   ctx.translate(4, 4);
   ctx.scale(S, S);
@@ -41,13 +41,31 @@ export function traceShape(shape: LibraryShape): Traced {
   return t;
 }
 
+/** Bundled lettering (self-hosted, so it looks the same on every device and inside a sandbox). */
 export const FONTS = [
-  { id: 'sans', name: 'Bold', css: '900 160px "Arial Black", "Helvetica Neue", Arial, sans-serif' },
-  { id: 'round', name: 'Rounded', css: '800 160px "Arial Rounded MT Bold", "Nunito", "Varela Round", system-ui, sans-serif' },
-  { id: 'serif', name: 'Serif', css: '700 160px Georgia, "Times New Roman", serif' },
-  { id: 'script', name: 'Script', css: '700 160px "Brush Script MT", "Segoe Script", "Snell Roundhand", cursive' },
-  { id: 'mono', name: 'Typewriter', css: '700 160px "Courier New", Courier, monospace' },
+  { id: 'sans', name: 'Bold', family: 'Archivo Black', weight: 400 },
+  { id: 'round', name: 'Rounded', family: 'Fredoka', weight: 700 },
+  { id: 'bubble', name: 'Bubbly', family: 'Baloo 2', weight: 800 },
+  { id: 'tall', name: 'Tall poster', family: 'Bebas Neue', weight: 400 },
+  { id: 'slab', name: 'Slab', family: 'Alfa Slab One', weight: 400 },
+  { id: 'serif', name: 'Elegant serif', family: 'Playfair Display', weight: 900 },
+  { id: 'script', name: 'Script', family: 'Pacifico', weight: 400 },
+  { id: 'retro', name: 'Retro script', family: 'Lobster', weight: 400 },
+  { id: 'marker', name: 'Marker', family: 'Permanent Marker', weight: 400 },
+  { id: 'comic', name: 'Comic', family: 'Bangers', weight: 400 },
+  { id: 'toy', name: 'Playful', family: 'Luckiest Guy', weight: 400 },
+  { id: 'deco', name: 'Deco', family: 'Righteous', weight: 400 },
+  { id: 'mono', name: 'Typewriter', family: 'Special Elite', weight: 400 },
 ] as const;
+
+const fontCss = (f: (typeof FONTS)[number]) => `${f.weight} 160px "${f.family}", "Arial Black", Arial, sans-serif`;
+
+/** Canvas text only uses a web font once it is loaded, so load them all before the first trace. */
+export async function loadFonts(): Promise<void> {
+  if (!document.fonts?.load) return;
+  const all = Promise.all(FONTS.map((f) => document.fonts.load(`${f.weight} 40px "${f.family}"`).catch(() => [])));
+  await Promise.race([all, new Promise((r) => setTimeout(r, 3000))]);
+}
 
 /**
  * Text (or emoji) → one connected silhouette. Separate letters would fall
@@ -58,7 +76,7 @@ export function traceText(text: string, fontId: string, bar: boolean): Traced | 
   if (!t) return null;
   const font = FONTS.find((f) => f.id === fontId) ?? FONTS[0];
   const probe = makeCanvas(1, 1).getContext('2d')!;
-  probe.font = font.css;
+  probe.font = fontCss(font);
   const m = probe.measureText(t);
   const asc = Math.ceil(m.actualBoundingBoxAscent || 120);
   const desc = Math.ceil(m.actualBoundingBoxDescent || 0);
@@ -70,7 +88,7 @@ export function traceText(text: string, fontId: string, bar: boolean): Traced | 
   const c = makeCanvas((width + 2 * pad) * scale, (asc + Math.max(desc, barH) + 2 * pad) * scale);
   const ctx = c.getContext('2d')!;
   ctx.scale(scale, scale);
-  ctx.font = font.css;
+  ctx.font = fontCss(font);
   ctx.fillStyle = '#000';
   ctx.fillText(t, pad + left, pad + asc);
   // the bar overlaps the baseline slightly so round letters still bite into it

@@ -100,6 +100,8 @@ function ElementCard() {
         onChange={(v) => update(el.id, { supportOffset: v / 100 })}
       />
       <LengthField label="Support width" value={el.supportWidthMm} min={LIMITS.minSupport} max={Math.max(LIMITS.minSupport, Math.min(40, w))} onChange={(v) => update(el.id, { supportWidthMm: v })} />
+      {el.mode === 'glued' && <SwitchRow label="Low tab" checked={!!el.lowTab} onChange={(v) => update(el.id, { lowTab: v })} />}
+      {el.mode === 'glued' && el.lowTab && <p className="field-note">The strut runs 8 mm above the floor, under the pieces behind it.</p>}
       {el.mode === 'glued' && <SwatchRow label="Paper colour" value={el.color} onChange={(v) => update(el.id, { color: v })} />}
       <div className="card-actions">
         <button type="button" className="btn btn-secondary" onClick={() => duplicate(el.id)}>

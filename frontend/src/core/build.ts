@@ -101,7 +101,7 @@ function computeElement(el: PopElement): Built {
     // A hidden box tab: as tall as it is deep when the piece covers it
     // (then its top fold lands on the centre fold and scissors can cut it
     // from the folded edge), otherwise just short of the piece's top.
-    strut = Math.max(5, Math.min(d, colTop > 8 ? colTop - 3 : d));
+    strut = Math.max(5, Math.min(el.lowTab ? 8 : d, colTop > 8 ? colTop - 3 : d));
   }
 
   const pillar = rect(c1, -d, c2, -d + strut);

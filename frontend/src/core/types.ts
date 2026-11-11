@@ -65,6 +65,11 @@ export interface PopElement {
   supportWidthMm: number;
   /** Paper colour of a glued piece. */
   color: string;
+  /**
+   * Glue-on only: use a short tab (8 mm) instead of one as tall as it is deep. Its strut then
+   * runs low along the floor and passes under the scenery standing behind it.
+   */
+  lowTab?: boolean;
 }
 
 export interface Design {

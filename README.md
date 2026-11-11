@@ -45,7 +45,7 @@ a piece in two. Export is blocked while an error remains.
   model (cut/fold lines, 3D parts, checks), `pose.ts` fold kinematics,
   `sheet.ts` sheet layout + SVG / print output. Coordinate systems are
   documented at the top of `types.ts`.
-- `src/app/` – shape library, rasterisers (shape/text/image/drawing → mask),
+- `src/app/` – shape library (occasion + scenery shapes), 13 bundled fonts, rasterisers (shape/text/image/drawing → mask),
   templates, state with undo and auto-placement, export wiring.
 - `src/components/` – UI on the Atomm generator design system (`atomm.css` is
   the platform's layout-5 stylesheet): tool rail + panel, canvas with

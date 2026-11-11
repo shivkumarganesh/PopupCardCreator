@@ -7,6 +7,9 @@ export interface LibraryShape {
   name: string;
   fill: string[];
   holes?: string[];
+  /** Drawing box, default 100 × 100. Wide strips (hills, waves) use a wider one. */
+  w?: number;
+  h?: number;
 }
 
 const circle = (cx: number, cy: number, r: number) =>
@@ -25,6 +28,28 @@ function star(points: number, cx: number, cy: number, r1: number, r2: number): s
 const petals = Array.from({ length: 6 }, (_, i) => {
   const a = (Math.PI * 2 * i) / 6 - Math.PI / 2;
   return circle(50 + 17 * Math.cos(a), 30 + 17 * Math.sin(a), 12.5);
+});
+
+const scallops = (n: number, w: number, top: number, dip: number, h: number) => {
+  const step = w / n;
+  let d = `M0 ${h}V${dip}`;
+  for (let i = 0; i < n; i++) d += `C${(i + 0.2) * step} ${top} ${(i + 0.8) * step} ${top} ${(i + 1) * step} ${dip}`;
+  return `${d}V${h}Z`;
+};
+
+const blades = (n: number, w: number, h: number, base: number) => {
+  const step = w / n;
+  let d = `M0 ${h}V${h - base}`;
+  for (let i = 0; i < n; i++) {
+    const tip = i % 3 === 0 ? 0 : i % 3 === 1 ? h * 0.35 : h * 0.18;
+    d += `L${(i + 0.5 + (i % 2 ? 0.25 : -0.2)) * step} ${tip}L${(i + 1) * step} ${h - base}`;
+  }
+  return `${d}V${h}Z`;
+};
+
+const pickets = Array.from({ length: 9 }, (_, i) => {
+  const x = 4 + i * 22;
+  return `M${x} 60V12L${x + 7} 2L${x + 14} 12V60Z`;
 });
 
 export const SHAPES: LibraryShape[] = [
@@ -111,6 +136,95 @@ export const SHAPES: LibraryShape[] = [
     holes: [circle(50, 38, 8)],
   },
   { id: 'crown', name: 'Crown', fill: ['M10 100L3 38L28 62L50 20L72 62L97 38L90 100Z'] },
+  // ── scenery ──
+  { id: 'hills', name: 'Hills', w: 200, h: 60, fill: ['M0 60V30C22 4 52 2 78 26C104 -2 150 0 200 34V60Z'] },
+  { id: 'waves', name: 'Waves', w: 200, h: 30, fill: [scallops(8, 200, 0, 14, 30)] },
+  { id: 'grass', name: 'Grass', w: 200, h: 26, fill: [blades(26, 200, 26, 9)] },
+  { id: 'fence', name: 'Fence', w: 200, h: 60, fill: [...pickets, 'M0 22h200v8h-200z', 'M0 42h200v8h-200z'] },
+  {
+    id: 'roundtree',
+    name: 'Leafy tree',
+    fill: [circle(50, 34, 32), circle(28, 48, 20), circle(72, 48, 20), 'M43 58h14v42h-14z'],
+  },
+  {
+    id: 'palm',
+    name: 'Palm tree',
+    fill: [
+      'M44 100C44 72 48 52 54 34L64 36C58 54 56 74 58 100Z',
+      'M58 38C44 12 18 12 4 32C24 26 42 30 58 38Z',
+      'M58 38C72 12 94 14 99 36C84 28 70 30 58 38Z',
+      'M58 38C50 20 56 6 72 1C66 14 64 26 58 38Z',
+      'M58 36C38 34 24 46 20 66C32 52 46 44 60 42Z',
+      'M58 36C78 36 90 50 92 68C82 54 70 46 56 42Z',
+      circle(58, 38, 6),
+    ],
+  },
+  {
+    id: 'cactus',
+    name: 'Cactus',
+    fill: [
+      'M41 20h18v80h-18z',
+      circle(50, 20, 9),
+      'M20 40h13v30h-13z',
+      'M20 57h24v13h-24z',
+      circle(26.5, 40, 6.5),
+      'M67 28h13v30h-13z',
+      'M56 45h24v13h-24z',
+      circle(73.5, 28, 6.5),
+    ],
+  },
+  {
+    id: 'sailboat',
+    name: 'Sailboat',
+    fill: ['M8 78H92L78 100H22Z', 'M48 6h4v74h-4z', 'M55 10L88 72H55Z', 'M45 24L16 72H45Z'],
+  },
+  {
+    id: 'lighthouse',
+    name: 'Lighthouse',
+    fill: ['M39 30H61L70 100H30Z', 'M33 25h34v7h-34z', 'M41 11h18v16h-18z', 'M37 13L50 1L63 13Z'],
+    holes: [circle(50, 52, 4.5), 'M46 70h8v12h-8z'],
+  },
+  {
+    id: 'castle',
+    name: 'Castle',
+    fill: [
+      'M8 100V24H14V16H20V24H26V16H32V24H38V44H44V36H50V44H56V36H62V44V24H68V16H74V24H80V16H86V24H92V100Z',
+      'M20 16L23 2L26 16Z',
+      'M74 16L77 2L80 16Z',
+    ],
+    holes: ['M19 38h8v14h-8z', 'M73 38h8v14h-8z', 'M43 62h14v16h-14z'],
+  },
+  { id: 'tent', name: 'Tent', fill: ['M50 6L97 100H3Z', 'M48 0h4v12h-4z'], holes: ['M50 50L64 90H36Z'] },
+  {
+    id: 'barn',
+    name: 'Barn',
+    fill: ['M12 100V46L30 20H70L88 46V100Z'],
+    holes: ['M39 58h22v28h-22z', circle(50, 38, 6)],
+  },
+  {
+    id: 'windmill',
+    name: 'Windmill',
+    fill: [
+      'M38 100L45 38H55L62 100Z',
+      'M47 38L43 2H57L53 38Z',
+      'M47 38L43 74H57L53 38Z',
+      'M50 35L14 31V45L50 41Z',
+      'M50 35L86 31V45L50 41Z',
+      circle(50, 38, 6),
+    ],
+  },
+  {
+    id: 'church',
+    name: 'Chapel',
+    fill: ['M20 100V54H80V100Z', 'M14 56L50 30L86 56Z', 'M42 44V18L50 3L58 18V44Z'],
+    holes: [circle(50, 66, 6), 'M28 70h8v14h-8z', 'M64 70h8v14h-8z'],
+  },
+  {
+    id: 'mushroom',
+    name: 'Mushroom',
+    fill: ['M6 58C6 26 26 6 50 6C74 6 94 26 94 58Z', 'M37 54h26v46h-26z'],
+    holes: [circle(34, 34, 6), circle(62, 28, 7), circle(72, 46, 4)],
+  },
   { id: 'circle', name: 'Circle', fill: [circle(50, 50, 48), 'M36 86h28v14h-28z'] },
 ];
 
