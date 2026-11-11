@@ -1,8 +1,8 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// base must match the GitHub Pages project path: username.github.io/PopupCardCreator/
+// Relative base: the same build works on GitHub Pages and as an uploaded Atomm artifact.
 export default defineConfig({
-  base: '/PopupCardCreator/',
+  base: './',
   plugins: [react()],
 })

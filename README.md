@@ -1,81 +1,77 @@
 # Pop-Up Card Creator
 
-Design parametric pop-up cards with a live 3D fold simulation and export
-laser-ready SVG flat patterns for cutters like the xTool M1 Ultra / F2.
+A browser generator for real, buildable pop-up cards. Pick a template or start
+blank, stand shapes, words, emoji, your own pictures or freehand drawings on the
+card, watch it fold in 3D, and export a laser-ready SVG or a print-and-cut
+template for scissors.
 
-## Structure
+## How the cards work
 
-- `frontend/` — Vite + React + TypeScript + React Three Fiber.
-  - `src/core/` — pure-TS geometry engine (single source of truth for both
-    the 3D visualizer and the 2D SVG flat pattern): types, flat-pattern
-    builder, laser-ready SVG serializer.
-  - `src/components/three/` — R3F components (`BaseCard`, scene).
-  - Split-pane UI: 3D canvas with a 0–180° opening-angle slider on the left,
-    live flat pattern + SVG export on the right.
-- `backend/` — dormant FastAPI skeleton. The app is currently frontend-only
-  (deployable to GitHub Pages); persistence uses the browser. The skeleton
-  stays for a possible future server.
+Every element is a **parallelogram (box-tab) pop-up**, the mechanism behind
+classic 90° pop-up and "origamic architecture" cards. An upright face hinges on
+the floor panel and a strut ties it back to the wall; opposite sides of the
+linkage are equal, so it lies flat at 180°, stands at 90° and closes flat at 0°
+for any depth and height. That is what guarantees the output folds.
 
-## Laser conventions
+Each element is built one of two ways:
 
-All export coordinates are millimetres (mm-true `viewBox`), hairline
-`0.1` strokes, `fill="none"`. Operations are color-coded:
+- **Glue-on** – a small tab is cut from the card and the shape is a separate
+  piece (any paper colour) glued to its front. Pieces can overlap in depth; a
+  piece standing behind another one's strut automatically gets a slot at its
+  foot so it slides over the strut.
+- **One sheet** – the silhouette itself is cut from the card and folds up, with
+  the strut leaving from its top. No glue, but it needs its own patch of paper.
 
-| Color | Hex | Operation |
-| --- | --- | --- |
-| Red | `#FF0000` | Cut (outer boundary and through-cuts, always closed paths) |
-| Blue | `#0000FF` | Mountain fold (score) |
-| Green | `#00FF00` | Valley fold (score) |
+The builder checks what paper cannot do and says how to fix it: elements that
+would stick out of the closed card, cuts that reach the edge, two elements
+needing the same paper, pieces standing in the same spot, a strut that would cut
+a piece in two. Export is blocked while an error remains.
 
-Score lines stop 0.5 mm short of cut edges so corners are not over-weakened.
-Layers are ordered valley → mountain → cut so scores run before the cut
-releases the part.
+## Output
 
-## Run
+- **Laser SVG** – millimetres, 1:1. Red `#FE0002` strokes are cuts, blue
+  `#2366FF` strokes are score/fold lines (the Atomm / xTool colour spec). The
+  pop-up sheet, the optional backing cover and the glue-on pieces (grouped by
+  paper colour) are separate `<g>` groups laid side by side.
+- **Print template** – one page per sheet, black lines at 100 %: solid = cut,
+  dashed = valley fold, dash-dot = mountain fold.
+
+## Code
+
+`frontend/` – Vite + React + TypeScript + three.js.
+
+- `src/core/` – pure geometry, no DOM (unit-tested):
+  `trace.ts` bitmap → silhouette (marching squares), `build.ts` design → card
+  model (cut/fold lines, 3D parts, checks), `pose.ts` fold kinematics,
+  `sheet.ts` sheet layout + SVG / print output. Coordinate systems are
+  documented at the top of `types.ts`.
+- `src/app/` – shape library, rasterisers (shape/text/image/drawing → mask),
+  templates, state with undo and auto-placement, export wiring.
+- `src/components/` – UI on the Atomm generator design system (`atomm.css` is
+  the platform's layout-5 stylesheet): tool rail + panel, canvas with
+  2D design / 3D preview / Export views, parameters rail.
+
+The 2D editor, the 3D preview and the exported file all read the same model
+from `buildCard()`.
 
 ```sh
 cd frontend
 npm install
-npm run dev        # http://localhost:5173
-npm test           # kinematics unit tests (vitest)
-npm run build      # production build (served from /PopupCardCreator/ on Pages)
+npm run dev     # http://localhost:5173
+npm test
+npm run build   # static site in frontend/dist (relative paths)
 ```
 
-Pushes to `main` deploy automatically to GitHub Pages via
-`.github/workflows/deploy.yml` (enable Pages → "GitHub Actions" as the
-source in the repo settings once).
+## Publishing
 
-## Kinematic model (roadmap)
+- **GitHub Pages** – `.github/workflows/deploy.yml` builds and deploys
+  `frontend/dist` on push.
+- **Atomm creative tools** – `index.html` loads the platform SDK, the Export
+  button slot is `[data-atomm-export-button]`, and the `export` hook returns
+  the SVG (plus the print template on Download). Preview locally with
+  `https://www.atomm.com/creativetools/community/generator/<name>?local=http://localhost:5173/`,
+  then zip the contents of `frontend/dist` and upload it in the developer
+  console. Opened outside the platform, the page shows its own "Export SVG"
+  button instead.
 
-Mechanisms are modeled as linkages — panels are rigid links, creases are
-revolute joints:
-
-- **V-fold** — spherical four-bar linkage; all creases concurrent at a vertex
-  on the gutter. Loop closure: `cos B = cos A·cos δ + sin A·cos(Θ/2)·sin δ`
-  (A = base sector angle, B = popup sector angle, Θ = card opening angle,
-  δ = central-crease elevation). The erect branch collapses to δ = A + B
-  when closed. Constraints: `B ≥ A` to open to 180° without tearing;
-  asymmetric variants need `A_L + B_L = A_R + B_R` to fold flat.
-- **Parallel/box fold** — planar four-bar in the cross-section perpendicular
-  to the gutter. Closes flat iff `p + a = q + b`; opens to θ without binding
-  iff the popup spans its creases (`a + b ≥` crease separation at θ — a
-  slit-cut step fold has `a = q, b = p` and flattens exactly at 180°);
-  containment `max(p+a, q+b) ≤` half card width.
-
-Both solvers live in `frontend/src/core/kinematics.ts` with unit tests.
-
-Implemented mechanisms:
-
-- **Step/box fold** — cut from the card; windows the panels where the strip lifts.
-- **V-fold** — two mounting methods, toggled per fold:
-  - *Glue*: a self-supporting patch (wings joined at a ridge off the gutter),
-    cut as a separate piece below the card and pasted on — no hollow. Supports
-    **asymmetric** left/right sector angles via the full spherical four-bar
-    solve (`solveVFoldAsym`).
-  - *Cut*: a triangular "beak" cut from the card itself (the gutter reverses to
-    a mountain ridge), leaving a triangular hollow — no gluing.
-
-Live constraint checks block export on invalid designs: overlapping
-mechanisms; a glued V-fold that would **tear** (a side with popup < base
-angle), **won't close flat** (Kawasaki: A_L+B_L ≠ A_R+B_R), or **protrudes**
-past the card edge when closed; and a cut beak too wide for the card.
+`backend/` is an unused FastAPI skeleton kept for a possible future server.
